@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>base-project</artifactId>
+        <groupId>com.base</groupId>
+        <version>1.0.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>common</artifactId>
+    <name>公共模块</name>
+
+    <dependencies>
+        <!--
+            AOP 依赖：分布式锁切面 @Aspect 需要
+            spring-boot-starter-aop 提供了 AspectJ 的自动配置支持
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <!--
+            Redis 依赖：分布式锁基于 Redis SETNX 实现
+            使用 StringRedisTemplate 操作 Redis
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!--
+            Redisson：提供分布式锁、限流器、延迟队列等高级 Redis 功能
+
+            【面试知识点】
+            Redisson vs Spring Data Redis（StringRedisTemplate）的区别：
+            - StringRedisTemplate：Spring 提供的 Redis 客户端，封装了基本的 Redis 操作
+              适合简单的 GET/SET/SETNX 操作（如本项目的分布式锁 DistributeLockAspect）
+            - Redisson：第三方 Redis 客户端，提供了丰富的高级数据结构
+              如 RRateLimiter（限流器）、RLock（可重入锁）、RDelayedQueue（延迟队列）等
+              底层通过 Lua 脚本实现分布式安全，无需手动编写 Lua
+
+            本模块中 Redisson 主要用于：
+            1. RateLimiter（限流器）：基于令牌桶算法的分布式限流
+            2. 后续可扩展：分布式锁（RLock）、布隆过滤器（RBloomFilter）等
+        -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+        </dependency>
+        <!--
+            Web 依赖：GlobalExceptionHandler 使用了 @RestControllerAdvice
+            使用 optional=true 表示不会强制传递给子模块
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

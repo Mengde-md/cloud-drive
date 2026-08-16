@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私政策 - 云盘存储</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%98%81%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f7f9fc;
+            color: #2c3e50;
+            line-height: 1.8;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px 48px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        h1 {
+            font-size: 26px;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+        .meta {
+            text-align: center;
+            color: #8492a6;
+            font-size: 14px;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eef0f3;
+        }
+        h2 {
+            font-size: 18px;
+            margin: 28px 0 12px;
+            color: #1a1a1a;
+        }
+        p, li { font-size: 15px; color: #495a6b; margin-bottom: 8px; }
+        ol, ul { padding-left: 24px; margin-bottom: 16px; }
+        ol li, ul li { margin-bottom: 6px; }
+        strong { color: #2c3e50; }
+        .back {
+            display: inline-block;
+            margin-top: 24px;
+            color: #4f7cfc;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back:hover { text-decoration: underline; }
+        .highlight {
+            background: #e8f5ff;
+            padding: 12px 16px;
+            border-left: 3px solid #4f7cfc;
+            border-radius: 4px;
+            margin: 16px 0;
+            font-size: 14px;
+            color: #1f4788;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 16px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #eef0f3;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background: #f7f9fc;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eef0f3;
+            font-size: 13px;
+            color: #a8b3c5;
+        }
+        footer a { color: #8492a6; text-decoration: none; margin: 0 8px; }
+        footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>隐私政策</h1>
+    <div class="meta">最后更新日期：2026 年 8 月 5 日 · 生效日期：2026 年 8 月 5 日</div>
+
+    <p>本平台（"云盘存储"）高度重视您的个人信息保护。本政策根据《中华人民共和国个人信息保护法》《数据安全法》《App 违法违规收集使用个人信息行为认定方法》等法律法规制定，帮助您了解我们收集、使用、存储和共享个人信息的方式以及您所享有的权利。</p>
+
+    <div class="highlight">
+        核心原则：我们仅收集为提供服务所必需的信息，且<strong>不会用于法律规定以外的目的</strong>。您有权随时查阅、复制、更正、删除您的个人信息。
+    </div>
+
+    <h2>一、我们收集哪些信息</h2>
+
+    <h2 style="font-size:16px;color:#4f7cfc">1.1 账号注册与登录</h2>
+    <table>
+        <tr><th>信息项</th><th>收集目的</th><th>存储方式</th></tr>
+        <tr><td>邮箱地址 / 手机号码</td><td>账号注册、身份识别</td><td>加密存储</td></tr>
+        <tr><td>登录密码（加盐哈希）</td><td>账号安全验证</td><td>BCrypt 哈希</td></tr>
+        <tr><td>注册 IP、注册时间</td><td>安全审计</td><td>日志保留 6 个月</td></tr>
+    </table>
+
+    <h2 style="font-size:16px;color:#4f7cfc">1.2 实名身份认证</h2>
+    <p>依据法律法规要求，您在首次使用本平台时需提供<strong>真实姓名、身份证号码、人脸图像</strong>，本平台通过<strong>第三方实名认证服务商</strong>（如阿里云实人认证、腾讯云慧眼）进行核验。</p>
+    <table>
+        <tr><th>信息项</th><th>收集目的</th><th>存储方式</th></tr>
+        <tr><td>真实姓名</td><td>身份核验</td><td>加密存储</td></tr>
+        <tr><td>身份证号码</td><td>身份核验</td><td>加密存储</td></tr>
+        <tr><td>人脸图像 / 活体视频</td><td>活体识别</td><td>仅在服务商端加密核验，本平台不留存原始影像</td></tr>
+        <tr><td>核验结果（通过/不通过）</td><td>判断是否允许使用服务</td><td>加密存储</td></tr>
+    </table>
+
+    <h2 style="font-size:16px;color:#4f7cfc">1.3 文件存储与同步</h2>
+    <table>
+        <tr><th>信息项</th><th>收集目的</th><th>存储方式</th></tr>
+        <tr><td>上传文件内容</td><td>为您提供云存储</td><td>加密存储在受控存储介质</td></tr>
+        <tr><td>文件名、文件大小、文件类型、MD5</td><td>文件识别、秒传、去重</td><td>数据库存储</td></tr>
+        <tr><td>上传时间、下载时间、操作类型</td><td>操作审计、内容审核</td><td>日志保留 6 个月</td></tr>
+    </table>
+
+    <h2 style="font-size:16px;color:#4f7cfc">1.4 设备与日志信息</h2>
+    <table>
+        <tr><th>信息项</th><th>收集目的</th><th>存储方式</th></tr>
+        <tr><td>设备型号、操作系统、客户端版本</td><td>兼容性适配、问题排查</td><td>日志保留 6 个月</td></tr>
+        <tr><td>IP 地址、登录时间、访问路径</td><td>安全审计、风险识别</td><td>日志保留 6 个月</td></tr>
+    </table>
+
+    <h2>二、我们如何使用您的信息</h2>
+    <ol>
+        <li><strong>提供核心服务</strong>：账号注册、登录验证、文件上传/下载/分享/同步、AI 文档问答。</li>
+        <li><strong>安全与合规</strong>：身份核验、内容安全审核、操作日志审计、违法违规事件调查。</li>
+        <li><strong>用户体验优化</strong>：故障排查、性能分析、新功能测试（使用经过<strong>去标识化处理</strong>的数据）。</li>
+        <li><strong>法定报送</strong>：依据法律法规或主管部门要求，依法向有关部门提供您的相关信息。</li>
+    </ol>
+
+    <h2>三、信息共享与披露</h2>
+    <p>本平台<strong>承诺不会出售您的个人信息</strong>，仅在下列情况下共享或披露：</p>
+    <ul>
+        <li><strong>实名核验</strong>：将必要的核验字段加密传输至第三方实名认证服务商，由其独立完成核验，本平台不留存原始证件影像。</li>
+        <li><strong>内容审核</strong>：将上传文件哈希及必要片段加密传输至内容审核服务商，用于识别违法违规内容。</li>
+        <li><strong>存储与 CDN</strong>：使用<strong>经过安全审查</strong>的云计算服务商（如阿里云、腾讯云）提供数据存储与分发服务。</li>
+        <li><strong>法律法规要求</strong>：依据《网络安全法》《数据安全法》《个人信息保护法》《刑事诉讼法》等法律法规，向<strong>公安机关、国家安全机关、检察机关、审判机关</strong>依法提供相关信息。</li>
+    </ul>
+
+    <h2>四、信息存储</h2>
+    <ol>
+        <li>存储地点：<strong>中华人民共和国境内</strong>服务器。</li>
+        <li>存储期限：
+            <ul>
+                <li>账号信息：账号注销后 30 日内删除；</li>
+                <li>文件数据：账号注销或服务终止后 <strong>30 日</strong>内删除；</li>
+                <li>操作日志：依据《网络安全法》第二十一条规定，<strong>留存不少于六个月</strong>。</li>
+            </ul>
+        </li>
+        <li>加密措施：静态加密（AES-256）+ 传输加密（HTTPS/TLS 1.3）+ 关键字段加密存储（BCrypt / RSA）。</li>
+        <li>备份与灾备：核心数据库每日全量备份，备份保留 30 日。</li>
+    </ol>
+
+    <h2>五、您的权利</h2>
+    <p>依据《个人信息保护法》第四章，您享有以下权利：</p>
+    <ol>
+        <li><strong>知情权</strong>：您有权了解本服务的隐私处理规则（本政策即为告知载体）。</li>
+        <li><strong>决定权</strong>：您有权限制或拒绝本平台对您的个人信息进行处理（部分拒绝可能影响服务可用性）。</li>
+        <li><strong>查阅权</strong>：您可随时在个人中心查阅您的账号信息、上传文件、实名信息。</li>
+        <li><strong>复制权</strong>：您可申请导出您的全部个人数据，本平台将在 15 个工作日内提供。</li>
+        <li><strong>更正权</strong>：如发现信息不准确，您可申请更正，本平台将在 7 个工作日内处理。</li>
+        <li><strong>删除权</strong>：在符合下列情形之一时，您可申请删除：
+            <ul>
+                <li>处理目的已实现、无法实现或不再必要；</li>
+                <li>本平台停止提供服务；</li>
+                <li>您撤回同意；</li>
+                <li>本平台违反法律法规或本政策处理您的个人信息。</li>
+            </ul>
+        </li>
+        <li><strong>注销权</strong>：您可随时申请账号注销。注销后，您的<strong>可识别数据将在 30 日内匿名化处理</strong>，但操作日志仍按法定要求保留。</li>
+        <li><strong>申诉权</strong>：如您认为本平台的个人信息处理行为违反法律法规或本政策，可通过 <strong>12377（违法和不良信息举报）、12321（垃圾信息举报）</strong>投诉，或向人民法院提起诉讼。</li>
+    </ol>
+
+    <h2>六、未成年人保护</h2>
+    <p>本平台<strong>不向未满 14 周岁未成年人提供服务</strong>。如您为已满 14 周岁未满 18 周岁的未成年人，应在<strong>法定监护人指导下</strong>阅读本协议并使用本服务。</p>
+
+    <h2>七、本政策的变更</h2>
+    <ol>
+        <li>本平台可根据法律法规变更或业务调整修改本政策，修改后的政策将自公布之日起 7 日后生效。</li>
+        <li>如本政策发生重大变更，本平台将通过<strong>站内通知、短信、邮件</strong>等方式告知您。</li>
+        <li>如您不同意修改后的政策，请立即停止使用本服务并申请账号注销。</li>
+    </ol>
+
+    <h2>八、联系我们</h2>
+    <p>如您对本政策或您的个人信息处理有任何疑问、意见或投诉，请通过以下方式联系我们：</p>
+    <ul>
+        <li>客服邮箱：<strong>support@example.com</strong>（请按 ICP 备案材料中的实际邮箱填写）</li>
+        <li>违法违规内容举报：<strong>report@example.com</strong></li>
+        <li>违法和不良信息举报电话：<strong>12377</strong></li>
+    </ul>
+
+    <p>我们将在<strong>15 个工作日内</strong>回复您的请求。</p>
+
+    <a href="./index.html" class="back">← 返回首页</a>
+
+    <footer>
+        <a href="./index.html">首页</a> ·
+        <a href="./agreement.html">用户协议</a> ·
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">黔ICP备2026013575号-1</a>
+        <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=52050202001660" target="_blank" rel="noopener">贵公网安备52050202001660号</a>
+    </footer>
+</div>
+</body>
+</html>

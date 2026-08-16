@@ -1,0 +1,18 @@
+# Build output and IDE metadata
+**/target/
+**/*.log
+logs/
+pids/
+.idea/
+*.iml
+
+# Runtime secrets and local data
+deploy/.env
+.env
+data/
+files/
+chunks/
+
+# OS files
+.DS_Store
+Thumbs.db

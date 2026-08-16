@@ -1,0 +1,27 @@
+# ============================================================
+# bootstrap.yml — Spring Cloud 引导配置
+# ============================================================
+# 【为什么用 bootstrap.yml 而不是 application.yml？】
+# Spring Cloud 的 bootstrap 上下文在 application 上下文之前加载，
+# 用于从远程配置中心（Nacos Config）拉取配置。
+# 如果把 Nacos 地址写在 application.yml 中，启动时可能来不及连接配置中心。
+# ============================================================
+
+spring:
+  application:
+    # 服务名称：Nacos 注册中心里显示的名字，也是配置中心 Data ID 的前缀
+    name: ai-service
+  cloud:
+    nacos:
+      # ---------- 服务发现（注册中心） ----------
+      discovery:
+        # Nacos 服务器地址，支持通过环境变量覆盖（方便 Docker 部署）
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+        # 命名空间，用于环境隔离（dev/test/prod），与其他服务保持一致
+        namespace: ${NACOS_NAMESPACE:}
+      # ---------- 配置中心 ----------
+      config:
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        # 配置文件格式选择 yml，方便阅读和编辑
+        file-extension: yml

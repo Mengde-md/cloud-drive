@@ -1,0 +1,32 @@
+# ============================================================
+# bootstrap.yml - 引导配置文件（在 application.yml 之前加载）
+# ============================================================
+# 【面试知识点】
+# 1. 为什么要用 bootstrap.yml？
+#    - Spring Boot 3 中，Nacos 配置中心需要在应用启动的最早阶段加载
+#    - bootstrap.yml 的加载优先级高于 application.yml
+#    - 需要先引入 spring-cloud-starter-bootstrap 依赖才能生效
+#
+# 2. Gateway 是特殊的微服务：
+#    - 基于 Spring WebFlux（响应式/非阻塞），不是传统的 Spring MVC
+#    - 所以 Nacos、Redis 等都要用 reactive 版本的依赖
+#    - 路由中的 lb:// 前缀表示通过 LoadBalancer 从 Nacos 获取服务实例
+# ============================================================
+spring:
+  application:
+    # 服务名称，Gateway 自己也要注册到 Nacos
+    # 这样其他服务也可以发现网关（比如内部回调场景）
+    name: gateway
+  cloud:
+    nacos:
+      # Nacos 服务发现配置
+      discovery:
+        # Nacos 服务器地址，支持环境变量注入
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+        # 命名空间，用于环境隔离（dev/test/prod）
+        namespace: ${NACOS_NAMESPACE:}
+      # Nacos 配置中心
+      config:
+        server-addr: ${NACOS_HOST:127.0.0.1}:${NACOS_PORT:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        file-extension: yml

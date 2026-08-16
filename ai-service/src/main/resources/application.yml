@@ -1,0 +1,96 @@
+# ============================================================
+# application.yml — AI 文档智能服务的本地配置
+# ============================================================
+# 本文件定义了 AI 服务运行所需的全部配置项。
+# 在生产环境中，敏感配置（如 API Key）应通过 Nacos 配置中心下发，
+# 或注入环境变量，不要硬编码在代码里。
+# ============================================================
+
+server:
+  # 服务端口：8093（与其他微服务不冲突）
+  port: 8093
+
+spring:
+  application:
+    name: ai-service
+  servlet:
+    multipart:
+      # 文件上传大小限制：50MB
+      # 因为需要上传文档进行解析，所以设置较大的限制
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+# ============================================================
+# AI 服务自定义配置
+# ============================================================
+# 这些配置项对应 AiProperties.java 中的 @ConfigurationProperties
+com:
+  base:
+    ai:
+      # ---------- AI 提供商配置 ----------
+      provider:
+        # OpenAI 兼容 API 的基础地址
+        # 当前使用 DeepSeek（深度求索），也支持通义千问/OpenAI/智谱GLM 等
+        # DeepSeek: https://api.deepseek.com/v1
+        # 通义千问: https://dashscope.aliyuncs.com/compatible-mode/v1
+        # OpenAI:   https://api.openai.com/v1
+        base-url: ${AI_BASE_URL:https://api.deepseek.com/v1}
+        # API 密钥：从环境变量读取，保护敏感信息
+        # 【如何获取 DeepSeek API Key？】
+        # 1. 访问 https://platform.deepseek.com/
+        # 2. 注册 → 充值 → 创建 API Key
+        # 【如何设置环境变量？】
+        # Windows: set AI_API_KEY=sk-你的真实密钥
+        # Linux/Mac: export AI_API_KEY=sk-你的真实密钥
+        # IDEA: Run Configuration → Environment variables → AI_API_KEY=sk-xxx
+        api-key: ${AI_API_KEY:}
+        # 对话模型名称：deepseek-chat 是 DeepSeek 的通用对话模型
+        # deepseek-reasoner 是推理模型（类似 o1），更慢但更精准
+        chat-model: ${AI_CHAT_MODEL:deepseek-chat}
+        # 温度参数：控制 AI 输出的随机性
+        # 0 = 确定性输出（每次相同），1 = 高度随机（创造性更强）
+        # 对于文档问答这种需要准确性的场景，设为 0.3 偏低
+        temperature: 0.3
+        # 最大生成 Token 数：限制 AI 单次回复的长度
+        # 2048 大约等于 1500 个汉字
+        max-tokens: 2048
+
+      # ---------- 文档索引配置 ----------
+      index:
+        # 文本分块大小（字符数）
+        # 【为什么要分块？】
+        # 1. LLM 有上下文窗口限制（如 4096 tokens），不能一次塞入整篇文档
+        # 2. 分块后检索更精准——用户问的问题通常只和文档的某个片段相关
+        # 3. 减少 Token 消耗，降低 API 调用成本
+        chunk-size: 1000
+        # 分块重叠大小（字符数）
+        # 【为什么要重叠？】
+        # 防止一个完整的语义单元被切断在两个块的边界上
+        # 比如一句话刚好在第 1000 字符处被截断，重叠 200 字符可以
+        # 保证这句话在前后两个块中都完整出现
+        chunk-overlap: 200
+        # RAG 检索时返回的最相似块数量
+        # topK=3 表示从所有块中选出与问题最相关的 3 个块作为上下文
+        retrieval-top-k: 3
+
+# SpringDoc OpenAPI 配置（Swagger UI）
+# 访问地址：http://localhost:8093/swagger-ui.html
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: com.base.ai.controller
+
+management:
+  server:
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never

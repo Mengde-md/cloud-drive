@@ -1,0 +1,97 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  data:
+    redis:
+      # 【配置外部化】Redis 连接信息通过环境变量注入
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin, RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedHeaders: '*'
+            allowedMethods: '*'
+            allowedOrigins: 'https://mengdecode.com,http://mengdecode.com,http://localhost:5173,http://localhost:3000'
+      routes:
+        # ============================================================
+        # 【面试知识点】路由配置说明
+        # ============================================================
+        # 1. uri: lb://服务名
+        #    - lb 是 LoadBalancer 的缩写
+        #    - 网关启动后，会从 Nacos 查找该服务名的所有实例
+        #    - 自动做负载均衡（轮询/随机等策略）
+        #    - 替代了之前的 http://localhost:端口 硬编码方式
+        #
+        # 2. predicates 路由断言：
+        #    - Path=/api/auth/** 表示匹配该路径前缀的请求
+        #    - ** 是通配符，匹配多级子路径
+        #
+        # 3. 对比之前的硬编码方式：
+        #    - 之前：uri: http://localhost:8090（写死IP和端口）
+        #    - 现在：uri: lb://auth-service（通过 Nacos 动态发现）
+        #    - 好处：服务实例增减时不需要改网关配置，自动感知
+        # ============================================================
+
+        # 认证服务路由 -> auth-service（Nacos 中注册的服务名）
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+
+        # 用户服务路由 -> user-service
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+
+        # 文件服务路由 -> file-service（合并了分享接口，因为分享功能在文件服务中）
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/api/files/**,/api/shares/**
+
+        # AI 服务路由 -> ai-service（预留，后续开发 AI 功能时使用）
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/ai/**
+
+# ============================================================
+# SA-Token 配置（与 auth-service 保持一致）
+# ============================================================
+# 【面试知识点】为什么网关和 auth-service 都要配置 SA-Token？
+# - SA-Token 的 Token 存储在 Redis 中，所有服务共享同一个 Redis
+# - 但每个服务需要知道 Token 的名称（token-name）才能从请求头中提取
+# - 网关用 sa-token-reactor-spring-boot3-starter（WebFlux 版本）
+# - auth-service 用 sa-token-spring-boot3-starter（Servlet 版本）
+# - 两者通过 sa-token-redis-jackson 共享同一个 Redis 中的 Token 数据
+# ============================================================
+sa-token:
+  # Token 名称，必须与 auth-service 一致
+  token-name: satoken
+  # Token 有效期（秒），与 auth-service 一致
+  timeout: 2592000
+  # Token 风格：uuid，与 auth-service 一致
+  token-style: uuid
+  # 网关不需要输出 SA-Token 日志（减少日志噪音）
+  is-log: false
+
+# Actuator 与 Prometheus 仅供服务器本机采集，不经 Nginx 暴露到公网。
+management:
+  server:
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never

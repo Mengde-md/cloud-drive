@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.files.mapper.UserFileMapper">
+
+    <select id="listUserFiles" resultType="com.base.files.entity.UserFile">
+        SELECT id, parent_id AS parentId, filename, file_size_desc AS fileSizeDesc,
+               folder_flag AS folderFlag, file_type AS fileType, gmt_modified AS gmtModified
+        FROM user_file
+        WHERE user_id = #{userId}
+        <if test="parentId != null and parentId != -1">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="fileTypes != null and fileTypes.size() > 0">
+            AND file_type IN
+            <foreach collection="fileTypes" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        AND deleted = #{deleted}
+        ORDER BY folder_flag DESC, gmt_modified DESC
+    </select>
+
+    <select id="getUserRootInfo" resultType="com.base.files.entity.UserFile">
+        SELECT id, parent_id AS parentId, filename, folder_flag AS folderFlag,
+               user_id AS userId, file_type AS fileType
+        FROM user_file
+        WHERE user_id = #{userId}
+          AND folder_flag = #{folderFlag}
+          AND parent_id = #{parentId}
+          AND deleted = 0
+    </select>
+
+</mapper>

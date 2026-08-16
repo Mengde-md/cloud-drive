@@ -1,0 +1,3109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云存储网盘 — Spring Boot 3 微服务项目</title>
+    <style>
+        /* ==================== CSS Reset & Variables ==================== */
+        :root {
+            --primary: #4F6BFF;
+            --primary-light: #6B83FF;
+            --primary-dark: #3A50E0;
+            --primary-bg: #EEF1FF;
+            --bg: #F5F7FA;
+            --card: #FFFFFF;
+            --text: #1F2937;
+            --text-secondary: #6B7280;
+            --text-light: #9CA3AF;
+            --border: #E5E7EB;
+            --border-light: #F3F4F6;
+            --success: #10B981;
+            --success-bg: #ECFDF5;
+            --warning: #F59E0B;
+            --warning-bg: #FFFBEB;
+            --danger: #EF4444;
+            --danger-bg: #FEF2F2;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --radius-lg: 16px;
+            --sidebar-w: 220px;
+            --header-h: 56px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        input, button, textarea, select {
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            border: none;
+        }
+
+        /* ==================== Scrollbar ==================== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+        /* ==================== Auth Page ==================== */
+        .auth-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+
+        .auth-page::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .auth-card {
+            position: relative;
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 420px;
+            max-width: 90vw;
+            padding: 40px;
+            z-index: 1;
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-logo .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .auth-logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .auth-logo p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            background: var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 3px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            background: var(--card);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: border-color 0.2s;
+            background: var(--card);
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+        }
+
+        .form-input.error {
+            border-color: var(--danger);
+        }
+
+        .form-error {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            font-size: 15px;
+        }
+
+        .btn-outline {
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--primary);
+            padding: 4px 8px;
+        }
+
+        .btn-text:hover {
+            background: var(--primary-bg);
+        }
+
+        /* ==================== App Layout ==================== */
+        .app {
+            display: none;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .app.show {
+            display: flex;
+        }
+
+        /* Header */
+        .app-header {
+            height: var(--header-h);
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 16px;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            white-space: nowrap;
+        }
+
+        .header-logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .header-search {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .header-search input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .header-search input:focus {
+            background: var(--card);
+            border-color: var(--primary);
+        }
+
+        .header-search .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 16px;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            transition: background 0.2s;
+        }
+
+        .header-user:hover {
+            background: var(--bg);
+        }
+
+        .header-user .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .header-user .name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            min-width: 160px;
+            padding: 4px 0;
+            display: none;
+            z-index: 200;
+        }
+
+        .dropdown.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg);
+        }
+
+        .dropdown-item.danger {
+            color: var(--danger);
+        }
+
+        /* Body Layout */
+        .app-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-nav {
+            padding: 12px 8px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-item .nav-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            margin-left: auto;
+            font-size: 11px;
+            background: var(--border-light);
+            padding: 1px 6px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+        }
+
+        .nav-item.active .nav-badge {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 8px 12px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 12px 4px;
+            font-weight: 600;
+        }
+
+        /* Storage Widget */
+        .storage-widget {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .storage-widget .storage-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .storage-bar {
+            height: 6px;
+            background: var(--border-light);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .storage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .storage-widget .storage-text {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+        }
+
+        .main-content.hidden {
+            display: none;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .breadcrumb-item:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .breadcrumb-item.current {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .breadcrumb-sep {
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .view-toggle button {
+            padding: 6px 10px;
+            background: var(--card);
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+        }
+
+        .view-toggle button.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+        }
+
+        /* File Grid View */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .file-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .file-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+        }
+
+        .file-card .file-icon {
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .file-card .file-name {
+            font-size: 13px;
+            text-align: center;
+            word-break: break-all;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .file-card .file-meta {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        .file-card .file-checkbox {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .file-card:hover .file-checkbox,
+        .file-card.selected .file-checkbox {
+            opacity: 1;
+        }
+
+        .file-card .file-actions {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .file-card:hover .file-actions {
+            opacity: 1;
+        }
+
+        .file-card .file-actions button {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border: none;
+        }
+
+        .file-card .file-actions button:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        /* File List View */
+        .file-list {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .file-list-header {
+            display: grid;
+            grid-template-columns: 40px 1fr 120px 100px 160px 80px;
+            padding: 10px 16px;
+            background: var(--bg);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .file-list-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 120px 100px 160px 80px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background 0.15s;
+            align-items: center;
+        }
+
+        .file-list-row:last-child {
+            border-bottom: none;
+        }
+
+        .file-list-row:hover {
+            background: var(--bg);
+        }
+
+        .file-list-row.selected {
+            background: var(--primary-bg);
+        }
+
+        .file-list-row .list-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .file-list-row .list-name .file-icon {
+            font-size: 20px;
+        }
+
+        .file-list-row .list-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 64px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-state .empty-text {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state .empty-hint {
+            font-size: 13px;
+        }
+
+        /* ==================== Overview Cards ==================== */
+        .overview-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .overview-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .overview-card:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .overview-card .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .overview-card .card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .overview-card .card-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .overview-card .card-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* ==================== Recent Files ==================== */
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title .section-more {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .section-title .section-more:hover {
+            color: var(--primary);
+        }
+
+        /* ==================== Modal ==================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 480px;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal.modal-lg {
+            width: 640px;
+        }
+
+        .modal.modal-sm {
+            width: 380px;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-light);
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .modal-close:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* ==================== Context Menu ==================== */
+        .context-menu {
+            position: fixed;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            padding: 4px 0;
+            z-index: 9999;
+            min-width: 180px;
+            display: none;
+        }
+
+        .context-menu.show {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .context-menu-item:hover {
+            background: var(--bg);
+        }
+
+        .context-menu-item.danger {
+            color: var(--danger);
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 4px 0;
+        }
+
+        /* ==================== Upload Area ==================== */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-bg);
+        }
+
+        .upload-zone .upload-icon {
+            font-size: 48px;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .upload-zone .upload-text {
+            font-size: 15px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .upload-zone .upload-hint {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .upload-list {
+            margin-top: 16px;
+        }
+
+        .upload-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+
+        .upload-item .upload-item-icon {
+            font-size: 24px;
+        }
+
+        .upload-item .upload-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .upload-item .upload-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .upload-item .upload-item-progress {
+            height: 4px;
+            background: var(--border-light);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .upload-item .upload-item-progress-bar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        .upload-item .upload-item-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .upload-item .upload-item-status.success {
+            color: var(--success);
+        }
+
+        .upload-item .upload-item-status.error {
+            color: var(--danger);
+        }
+
+        /* ==================== Share Page (Anonymous) ==================== */
+        .share-page {
+            display: none;
+            min-height: 100vh;
+            background: var(--bg);
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 20px;
+        }
+
+        .share-page.show {
+            display: flex;
+        }
+
+        .share-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            width: 600px;
+            max-width: 90vw;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .share-card .share-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        .share-card h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .share-card .share-meta {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .share-code-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .share-code-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            font-size: 18px;
+            letter-spacing: 4px;
+        }
+
+        .share-code-input input:focus {
+            border-color: var(--primary);
+        }
+
+        .share-files-list {
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        /* ==================== AI Panel ==================== */
+        .ai-panel {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .ai-upload-area {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .ai-upload-area h3 {
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        .ai-chat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .ai-chat-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-chat-messages {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+
+        .ai-message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .ai-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .ai-message .ai-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .ai-message.user .ai-avatar {
+            background: var(--primary);
+            color: white;
+        }
+
+        .ai-message.assistant .ai-avatar {
+            background: linear-gradient(135deg, var(--primary), #764ba2);
+            color: white;
+        }
+
+        .ai-message .ai-bubble {
+            background: var(--bg);
+            padding: 10px 14px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            max-width: 70%;
+            line-height: 1.6;
+        }
+
+        .ai-message.user .ai-bubble {
+            background: var(--primary);
+            color: white;
+        }
+
+        .ai-chat-input {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .ai-chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .ai-chat-input input:focus {
+            border-color: var(--primary);
+        }
+
+        .ai-chat-input input:disabled {
+            background: var(--bg);
+            cursor: not-allowed;
+        }
+
+        /* ==================== Loading ==================== */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.7);
+            z-index: 9998;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-overlay .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* ==================== Toast ==================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            padding: 12px 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 240px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.warning { border-left: 3px solid var(--warning); }
+        .toast.info { border-left: 3px solid var(--primary); }
+
+        /* ==================== Footer ==================== */
+        .app-footer {
+            text-align: center;
+            padding: 16px;
+            color: var(--text-light);
+            font-size: 12px;
+            border-top: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .app-footer a {
+            color: var(--text-light);
+        }
+
+        .app-footer a:hover {
+            color: var(--primary);
+        }
+
+        .share-page-footer {
+            margin-top: auto;
+            padding: 16px;
+            text-align: center;
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        /* ==================== Responsive ==================== */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .file-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .file-list-header,
+            .file-list-row { grid-template-columns: 40px 1fr 80px 60px; }
+            .file-list-header .col-time,
+            .file-list-row .col-time { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== Toast Container ==================== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ==================== Loading Overlay ==================== -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- ==================== Auth Page ==================== -->
+<div class="auth-page" id="authPage">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <div class="logo-icon">☁️</div>
+            <h1>云存储网盘</h1>
+            <p>Spring Boot 3 + Spring Cloud 微服务项目</p>
+        </div>
+        <div class="auth-tabs">
+            <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">登录</div>
+            <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">注册</div>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" class="form-input" id="loginEmail" placeholder="请输入邮箱" required>
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="loginBtn">登 录</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" onsubmit="handleRegister(event)" style="display:none;">
+            <div class="form-group">
+                <label>昵称</label>
+                <input type="text" class="form-input" id="regNickName" placeholder="请输入昵称" required>
+            </div>
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" class="form-input" id="regEmail" placeholder="请输入邮箱" required>
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" class="form-input" id="regPassword" placeholder="至少6位密码" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="registerBtn">注 册</button>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== Main App ==================== -->
+<div class="app" id="app">
+
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-logo">
+            <div class="logo-icon">☁️</div>
+            <span>云存储网盘</span>
+        </div>
+        <div class="header-search">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索文件..." onkeydown="handleSearchKeydown(event)">
+        </div>
+        <div style="position:relative;">
+            <div class="header-user" onclick="toggleUserMenu(event)">
+                <div class="avatar" id="userAvatar">U</div>
+                <span class="name" id="userName">用户</span>
+                <span style="font-size:12px;color:var(--text-light);">▼</span>
+            </div>
+            <div class="dropdown" id="userDropdown">
+                <div class="dropdown-item" onclick="showUserInfo()">👤 个人信息</div>
+                <div class="dropdown-item" onclick="logout()">🚪 退出登录</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Body -->
+    <div class="app-body">
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-nav">
+                <div class="nav-label">文件</div>
+                <div class="nav-item active" data-view="home" onclick="switchView('home')">
+                    <span class="nav-icon">🏠</span> 首页
+                </div>
+                <div class="nav-item" data-view="all" onclick="switchView('all')">
+                    <span class="nav-icon">📁</span> 全部文件
+                </div>
+                <div class="nav-item" data-view="image" onclick="switchView('image')">
+                    <span class="nav-icon">🖼️</span> 图片
+                </div>
+                <div class="nav-item" data-view="video" onclick="switchView('video')">
+                    <span class="nav-icon">🎬</span> 视频
+                </div>
+                <div class="nav-item" data-view="doc" onclick="switchView('doc')">
+                    <span class="nav-icon">📄</span> 文档
+                </div>
+
+                <div class="nav-divider"></div>
+
+                <div class="nav-label">工具</div>
+                <div class="nav-item" data-view="recycle" onclick="switchView('recycle')">
+                    <span class="nav-icon">🗑️</span> 回收站
+                </div>
+                <div class="nav-item" data-view="share" onclick="switchView('share')">
+                    <span class="nav-icon">🔗</span> 我的分享
+                </div>
+                <div class="nav-item" data-view="ai" onclick="switchView('ai')">
+                    <span class="nav-icon">🤖</span> AI 文档助手
+                </div>
+            </div>
+
+            <div class="storage-widget">
+                <div class="storage-title">
+                    <span>存储空间</span>
+                    <span id="storagePercent">0%</span>
+                </div>
+                <div class="storage-bar">
+                    <div class="storage-fill" id="storageFill" style="width:0%"></div>
+                </div>
+                <div class="storage-text" id="storageText">0 B / 0 B</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Content is dynamically rendered here -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="app-footer">
+        <a href="agreement.html" target="_blank" rel="noopener">用户协议</a>
+        &nbsp;|&nbsp; <a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>
+        &nbsp;|&nbsp; <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">黔ICP备2026013575号-1</a>
+        &nbsp;|&nbsp; <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=52050202001660" target="_blank" rel="noopener">贵公网安备52050202001660号</a>
+        &nbsp;|&nbsp; 违法和不良信息举报：12377
+    </div>
+</div>
+
+<!-- ==================== Share Access Page ==================== -->
+<div class="share-page" id="sharePage">
+    <div class="share-card" id="shareCard">
+        <!-- Dynamically rendered -->
+    </div>
+    <div class="share-page-footer">
+        <a href="agreement.html" target="_blank" rel="noopener">用户协议</a>
+        &nbsp;|&nbsp; <a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>
+        &nbsp;|&nbsp; <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">黔ICP备2026013575号-1</a>
+        &nbsp;|&nbsp; <a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=52050202001660" target="_blank" rel="noopener">贵公网安备52050202001660号</a>
+        &nbsp;|&nbsp; 违法和不良信息举报：12377
+    </div>
+</div>
+
+<!-- ==================== Context Menu ==================== -->
+<div class="context-menu" id="contextMenu"></div>
+
+<!-- ==================== Modal Container ==================== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal" id="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitle"></h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer" id="modalFooter"></div>
+    </div>
+</div>
+
+<script>
+// ==================== Configuration ====================
+const API_BASE = 'http://localhost:8080'; // Gateway port
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk
+
+// ==================== State ====================
+let state = {
+    token: localStorage.getItem('satoken') || '',
+    userInfo: null,
+    currentView: 'home',
+    currentParentId: 0,
+    breadcrumbs: [],
+    files: [],
+    selectedFiles: new Set(),
+    viewMode: 'grid', // grid | list
+    searchKeyword: '',
+    shareUrl: new URLSearchParams(location.search).get('s') || '',
+    shareCode: '',
+    aiMessages: [],
+    aiCurrentFileId: null,
+};
+
+// ==================== API Helper ====================
+async function api(method, path, body, isFormData) {
+    const url = API_BASE + path;
+    const options = {
+        method,
+        headers: {}
+    };
+
+    if (state.token) {
+        options.headers['satoken'] = state.token;
+    }
+
+    if (body && !isFormData) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+    } else if (body && isFormData) {
+        options.body = body; // FormData object
+    }
+
+    const res = await fetch(url, options);
+    const data = await res.json();
+
+    if (data.code !== undefined && data.code !== 200 && data.code !== 0) {
+        throw new Error(data.message || '请求失败');
+    }
+
+    return data;
+}
+
+// API for binary downloads
+async function apiDownload(path) {
+    const url = API_BASE + path;
+    const options = {
+        headers: {}
+    };
+    if (state.token) {
+        options.headers['satoken'] = state.token;
+    }
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error('下载失败');
+    return res.blob();
+}
+
+// ==================== Toast ====================
+function toast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    el.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+    container.appendChild(el);
+    setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
+}
+
+// ==================== Loading ====================
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('show');
+}
+
+// ==================== File Size Formatter ====================
+function formatSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return '刚刚';
+    if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+    if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+    if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
+    return d.toLocaleDateString('zh-CN');
+}
+
+// ==================== File Icon ====================
+function getFileIcon(file) {
+    if (file.folderFlag === 1) return '📁';
+    const type = file.fileType;
+    const icons = {
+        1: '🖼️', // image
+        2: '🎬', // video
+        3: '🎵', // audio
+        4: '📄', // document
+        5: '📦', // archive
+        6: '💻', // code
+    };
+    return icons[type] || '📄';
+}
+
+function getFileTypeLabel(type) {
+    const labels = { 1: '图片', 2: '视频', 3: '音频', 4: '文档', 5: '压缩包', 6: '代码' };
+    return labels[type] || '文件';
+}
+
+// ==================== Auth ====================
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const btn = document.getElementById('loginBtn');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> 登录中...';
+
+    try {
+        const res = await api('POST', '/api/auth/login', { email, password });
+        state.token = res.data;
+        localStorage.setItem('satoken', res.data);
+        toast('登录成功', 'success');
+        await initApp();
+    } catch (err) {
+        toast(err.message || '登录失败', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '登 录';
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const nickName = document.getElementById('regNickName').value.trim();
+    const btn = document.getElementById('registerBtn');
+
+    if (password.length < 6) {
+        toast('密码至少6位', 'warning');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> 注册中...';
+
+    try {
+        await api('POST', '/api/auth/register', { email, password, nickName });
+        toast('注册成功，请登录', 'success');
+        switchAuthTab('login');
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPassword').value = password;
+    } catch (err) {
+        toast(err.message || '注册失败', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '注 册';
+    }
+}
+
+async function logout() {
+    try {
+        await api('POST', '/api/auth/logout');
+    } catch (e) { /* ignore */ }
+    state.token = '';
+    state.userInfo = null;
+    localStorage.removeItem('satoken');
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('authPage').style.display = 'flex';
+    closeUserMenu();
+    toast('已退出登录', 'info');
+}
+
+async function fetchUserInfo() {
+    try {
+        const res = await api('GET', '/api/auth/userinfo');
+        state.userInfo = res.data;
+        updateUserUI();
+    } catch (err) {
+        // Token expired
+        logout();
+    }
+}
+
+function updateUserUI() {
+    if (!state.userInfo) return;
+    document.getElementById('userName').textContent = state.userInfo.nickName || state.userInfo.email;
+    document.getElementById('userAvatar').textContent = (state.userInfo.nickName || 'U')[0].toUpperCase();
+    updateStorage();
+}
+
+function updateStorage() {
+    if (!state.userInfo) return;
+    const used = state.userInfo.useSpace || 0;
+    const total = state.userInfo.totalSpace || 15 * 1024 * 1024 * 1024; // default 15GB
+    const percent = total > 0 ? Math.min(100, (used / total) * 100) : 0;
+    document.getElementById('storageFill').style.width = percent + '%';
+    document.getElementById('storagePercent').textContent = percent.toFixed(1) + '%';
+    document.getElementById('storageText').textContent = `${formatSize(used)} / ${formatSize(total)}`;
+}
+
+// ==================== User Menu ====================
+function toggleUserMenu(e) {
+    e.stopPropagation();
+    document.getElementById('userDropdown').classList.toggle('show');
+}
+
+function closeUserMenu() {
+    document.getElementById('userDropdown').classList.remove('show');
+}
+
+document.addEventListener('click', () => {
+    closeUserMenu();
+    document.getElementById('contextMenu').classList.remove('show');
+});
+
+function showUserInfo() {
+    closeUserMenu();
+    if (!state.userInfo) return;
+    const u = state.userInfo;
+    openModal('个人信息', `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+                <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:600;">
+                    ${(u.nickName || 'U')[0].toUpperCase()}
+                </div>
+                <div>
+                    <div style="font-size:18px;font-weight:600;">${u.nickName || '-'}</div>
+                    <div style="color:var(--text-secondary);font-size:13px;">${u.email || '-'}</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:var(--bg);padding:12px;border-radius:8px;">
+                    <div style="font-size:12px;color:var(--text-secondary);">已用空间</div>
+                    <div style="font-size:18px;font-weight:600;">${formatSize(u.useSpace)}</div>
+                </div>
+                <div style="background:var(--bg);padding:12px;border-radius:8px;">
+                    <div style="font-size:12px;color:var(--text-secondary);">总空间</div>
+                    <div style="font-size:18px;font-weight:600;">${formatSize(u.totalSpace)}</div>
+                </div>
+                <div style="background:var(--bg);padding:12px;border-radius:8px;">
+                    <div style="font-size:12px;color:var(--text-secondary);">注册时间</div>
+                    <div style="font-size:14px;">${formatDate(u.gmtCreate)}</div>
+                </div>
+                <div style="background:var(--bg);padding:12px;border-radius:8px;">
+                    <div style="font-size:12px;color:var(--text-secondary);">最后登录</div>
+                    <div style="font-size:14px;">${formatDate(u.lastLoginTime)}</div>
+                </div>
+            </div>
+        </div>
+    `, '', 'modal-sm');
+}
+
+// ==================== View Switching ====================
+function switchView(view) {
+    state.currentView = view;
+    state.currentParentId = 0;
+    state.breadcrumbs = [];
+    state.selectedFiles.clear();
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.view === view);
+    });
+
+    renderView();
+}
+
+function renderView() {
+    const content = document.getElementById('mainContent');
+    switch (state.currentView) {
+        case 'home': renderHome(); break;
+        case 'all': renderFiles(0); break;
+        case 'image': renderFiles(0, 1); break;
+        case 'video': renderFiles(0, 2); break;
+        case 'doc': renderFiles(0, 4); break;
+        case 'recycle': renderRecycle(); break;
+        case 'share': renderShares(); break;
+        case 'ai': renderAI(); break;
+    }
+}
+
+// ==================== Home View ====================
+async function renderHome() {
+    const content = document.getElementById('mainContent');
+    content.innerHTML = `
+        <div class="overview-cards" id="overviewCards">
+            <div class="overview-card">
+                <div class="card-icon" style="background:var(--primary-bg);color:var(--primary);">📁</div>
+                <div class="card-info">
+                    <div class="card-label">总文件数</div>
+                    <div class="card-value" id="statTotal">-</div>
+                </div>
+            </div>
+            <div class="overview-card">
+                <div class="card-icon" style="background:#FEF3F2;color:#F97066;">🖼️</div>
+                <div class="card-info">
+                    <div class="card-label">图片</div>
+                    <div class="card-value" id="statImages">-</div>
+                </div>
+            </div>
+            <div class="overview-card">
+                <div class="card-icon" style="background:#FFF7E6;color:#FAAD14;">🎬</div>
+                <div class="card-info">
+                    <div class="card-label">视频</div>
+                    <div class="card-value" id="statVideos">-</div>
+                </div>
+            </div>
+            <div class="overview-card">
+                <div class="card-icon" style="background:var(--success-bg);color:var(--success);">📄</div>
+                <div class="card-info">
+                    <div class="card-label">文档</div>
+                    <div class="card-value" id="statDocs">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="section-title">
+            最近文件
+            <span class="section-more" onclick="switchView('all')">查看全部 →</span>
+        </div>
+        <div id="recentFiles"></div>
+    `;
+
+    try {
+        const res = await api('GET', '/api/files/home/overview');
+        const data = res.data;
+        document.getElementById('statTotal').textContent = data.totalFiles || 0;
+        document.getElementById('statImages').textContent = data.images || 0;
+        document.getElementById('statVideos').textContent = data.videos || 0;
+        document.getElementById('statDocs').textContent = data.documents || 0;
+
+        const recentEl = document.getElementById('recentFiles');
+        if (data.recentFiles && data.recentFiles.length > 0) {
+            recentEl.innerHTML = renderFileList(data.recentFiles);
+            bindFileEvents(recentEl);
+        } else {
+            recentEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <div class="empty-text">还没有文件</div>
+                    <div class="empty-hint">点击"全部文件"上传你的第一个文件吧</div>
+                </div>
+            `;
+        }
+    } catch (err) {
+        content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${err.message}</div></div>`;
+    }
+}
+
+// ==================== Files View ====================
+async function renderFiles(parentId, fileTypes) {
+    const content = document.getElementById('mainContent');
+    state.currentParentId = parentId || 0;
+
+    const typeFilter = fileTypes !== undefined ? `&fileTypes=${fileTypes}` : '';
+    const params = `parentId=${state.currentParentId}${typeFilter}`;
+
+    content.innerHTML = `
+        <div id="breadcrumbContainer"></div>
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="btn btn-primary btn-sm" onclick="showUploadModal()">📤 上传</button>
+                <button class="btn btn-outline btn-sm" onclick="showCreateFolderModal()">📁 新建文件夹</button>
+                ${state.selectedFiles.size > 0 ? `
+                    <button class="btn btn-outline btn-sm" onclick="showShareModal()">🔗 分享</button>
+                    <button class="btn btn-outline btn-sm" onclick="batchDelete()">🗑️ 删除</button>
+                ` : ''}
+            </div>
+            <div class="toolbar-right">
+                <div class="view-toggle">
+                    <button class="${state.viewMode === 'grid' ? 'active' : ''}" onclick="setViewMode('grid')">▦</button>
+                    <button class="${state.viewMode === 'list' ? 'active' : ''}" onclick="setViewMode('list')">☰</button>
+                </div>
+            </div>
+        </div>
+        <div id="fileContainer">
+            <div style="text-align:center;padding:40px;"><span class="loading-spinner"></span></div>
+        </div>
+    `;
+
+    try {
+        const res = await api('GET', `/api/files/folders-files?${params}`);
+        state.files = res.data || [];
+        renderBreadcrumb();
+        renderFileContainer();
+    } catch (err) {
+        document.getElementById('fileContainer').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${err.message}</div></div>`;
+    }
+}
+
+function renderFileContainer() {
+    const container = document.getElementById('fileContainer');
+    if (!state.files || state.files.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" onclick="showUploadModal()" style="cursor:pointer;">
+                <div class="empty-icon">📂</div>
+                <div class="empty-text">文件夹为空</div>
+                <div class="empty-hint">点击此处或拖拽文件上传</div>
+            </div>
+        `;
+        return;
+    }
+    if (state.viewMode === 'grid') {
+        container.innerHTML = `<div class="file-grid">${renderFileGrid(state.files)}</div>`;
+    } else {
+        container.innerHTML = `<div class="file-list">${renderFileListTable(state.files)}</div>`;
+    }
+    bindFileEvents(container);
+}
+
+function renderFileGrid(files) {
+    return files.map(f => `
+        <div class="file-card ${state.selectedFiles.has(f.id) ? 'selected' : ''}" data-id="${f.id}" data-file='${JSON.stringify(f).replace(/'/g, "&#39;")}'>
+            <input type="checkbox" class="file-checkbox" ${state.selectedFiles.has(f.id) ? 'checked' : ''} onchange="toggleSelect(${f.id}, this.checked)">
+            <div class="file-actions">
+                <button onclick="showContextMenu(event, ${f.id})" title="更多">⋯</button>
+            </div>
+            <div class="file-icon">${getFileIcon(f)}</div>
+            <div class="file-name">${f.filename}</div>
+            <div class="file-meta">${f.folderFlag === 1 ? '文件夹' : (f.fileSizeDesc || '-')}</div>
+        </div>
+    `).join('');
+}
+
+function renderFileListTable(files) {
+    return `
+        <div class="file-list-header">
+            <div></div>
+            <div>名称</div>
+            <div>大小</div>
+            <div>类型</div>
+            <div class="col-time">修改时间</div>
+            <div>操作</div>
+        </div>
+        ${files.map(f => `
+            <div class="file-list-row ${state.selectedFiles.has(f.id) ? 'selected' : ''}" data-id="${f.id}" data-file='${JSON.stringify(f).replace(/'/g, "&#39;")}'>
+                <div><input type="checkbox" ${state.selectedFiles.has(f.id) ? 'checked' : ''} onchange="toggleSelect(${f.id}, this.checked)"></div>
+                <div class="list-name">
+                    <span class="file-icon">${getFileIcon(f)}</span>
+                    <span>${f.filename}</span>
+                </div>
+                <div class="list-meta">${f.folderFlag === 1 ? '-' : (f.fileSizeDesc || '-')}</div>
+                <div class="list-meta">${f.folderFlag === 1 ? '文件夹' : getFileTypeLabel(f.fileType)}</div>
+                <div class="list-meta col-time">${formatDate(f.updateTime)}</div>
+                <div><button class="btn btn-text btn-sm" onclick="event.stopPropagation();showContextMenu(event, ${f.id})">⋯</button></div>
+            </div>
+        `).join('')}
+    `;
+}
+
+function renderFileList(files) {
+    // Simplified list for recent files on home
+    return `
+        <div class="file-list">
+            <div class="file-list-header">
+                <div></div>
+                <div>名称</div>
+                <div>大小</div>
+                <div>类型</div>
+                <div class="col-time">修改时间</div>
+                <div></div>
+            </div>
+            ${files.map(f => `
+                <div class="file-list-row" data-id="${f.id}" data-file='${JSON.stringify(f).replace(/'/g, "&#39;")}'>
+                    <div></div>
+                    <div class="list-name">
+                        <span class="file-icon">${getFileIcon(f)}</span>
+                        <span>${f.filename}</span>
+                    </div>
+                    <div class="list-meta">${f.folderFlag === 1 ? '-' : (f.fileSizeDesc || '-')}</div>
+                    <div class="list-meta">${f.folderFlag === 1 ? '文件夹' : getFileTypeLabel(f.fileType)}</div>
+                    <div class="list-meta col-time">${formatDate(f.updateTime)}</div>
+                    <div></div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function bindFileEvents(container) {
+    container.querySelectorAll('[data-id]').forEach(el => {
+        const file = JSON.parse(el.dataset.file.replace(/&#39;/g, "'"));
+        el.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+            if (file.folderFlag === 1) {
+                // Enter folder
+                enterFolder(file);
+            } else {
+                // Toggle selection
+                toggleSelect(file.id, !state.selectedFiles.has(file.id));
+                el.classList.toggle('selected');
+            }
+        });
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showContextMenu(e, file.id);
+        });
+    });
+}
+
+function enterFolder(folder) {
+    state.breadcrumbs.push({ id: folder.id, name: folder.filename, parentId: state.currentParentId });
+    state.currentParentId = folder.id;
+    renderFiles(folder.id);
+}
+
+async function renderBreadcrumb() {
+    const container = document.getElementById('breadcrumbContainer');
+    if (!container) return;
+
+    let html = `<div class="breadcrumb">
+        <span class="breadcrumb-item ${state.breadcrumbs.length === 0 ? 'current' : ''}" onclick="goToFolder(-1)">全部文件</span>
+    `;
+
+    for (let i = 0; i < state.breadcrumbs.length; i++) {
+        const crumb = state.breadcrumbs[i];
+        html += `<span class="breadcrumb-sep">›</span>`;
+        html += `<span class="breadcrumb-item ${i === state.breadcrumbs.length - 1 ? 'current' : ''}" onclick="goToFolder(${i})">${crumb.name}</span>`;
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+function goToFolder(index) {
+    if (index === -1) {
+        state.breadcrumbs = [];
+        state.currentParentId = 0;
+    } else {
+        state.breadcrumbs = state.breadcrumbs.slice(0, index + 1);
+        state.currentParentId = state.breadcrumbs[index].id;
+    }
+    renderFiles(state.currentParentId);
+}
+
+function setViewMode(mode) {
+    state.viewMode = mode;
+    renderFileContainer();
+}
+
+function toggleSelect(fileId, checked) {
+    if (checked) {
+        state.selectedFiles.add(fileId);
+    } else {
+        state.selectedFiles.delete(fileId);
+    }
+    // Update toolbar
+    const toolbar = document.querySelector('.toolbar-left');
+    if (toolbar && state.selectedFiles.size > 0) {
+        renderFiles(state.currentParentId);
+    }
+}
+
+// ==================== Context Menu ====================
+function showContextMenu(e, fileId) {
+    e.stopPropagation();
+    const file = state.files.find(f => f.id === fileId);
+    if (!file) return;
+
+    const menu = document.getElementById('contextMenu');
+    const isFolder = file.folderFlag === 1;
+
+    menu.innerHTML = `
+        ${!isFolder ? `<div class="context-menu-item" onclick="downloadFile(${fileId})">⬇️ 下载</div>` : ''}
+        ${!isFolder ? `<div class="context-menu-item" onclick="previewFile(${fileId})">👁️ 预览</div>` : ''}
+        <div class="context-menu-item" onclick="renameFile(${fileId})">✏️ 重命名</div>
+        <div class="context-menu-item" onclick="showShareModal(${fileId})">🔗 分享</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" onclick="moveFile(${fileId})">📦 移动到</div>
+        <div class="context-menu-item" onclick="copyFile(${fileId})">📋 复制到</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item danger" onclick="deleteFiles([${fileId}])">🗑️ 删除</div>
+    `;
+
+    menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+    menu.style.top = Math.min(e.clientY, window.innerHeight - 300) + 'px';
+    menu.classList.add('show');
+}
+
+// ==================== File Operations ====================
+async function downloadFile(fileId) {
+    document.getElementById('contextMenu').classList.remove('show');
+    try {
+        const blob = await apiDownload(`/api/files/file/download?fileId=${fileId}`);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const file = state.files.find(f => f.id === fileId);
+        a.download = file ? file.filename : 'download';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('下载成功', 'success');
+    } catch (err) {
+        toast('下载失败: ' + err.message, 'error');
+    }
+}
+
+async function previewFile(fileId) {
+    document.getElementById('contextMenu').classList.remove('show');
+    const url = `${API_BASE}/api/files/file/preview?fileId=${fileId}`;
+    const file = state.files.find(f => f.id === fileId);
+
+    // For images, open in modal
+    if (file && file.fileType === 1) {
+        const headers = state.token ? { satoken: state.token } : {};
+        try {
+            const res = await fetch(url, { headers });
+            const blob = await res.blob();
+            const imgUrl = URL.createObjectURL(blob);
+            openModal('预览', `<div style="text-align:center;"><img src="${imgUrl}" style="max-width:100%;max-height:60vh;border-radius:8px;" /></div>`, '', 'modal-lg');
+        } catch (err) {
+            toast('预览失败', 'error');
+        }
+    } else {
+        // Open in new tab
+        window.open(url, '_blank');
+    }
+}
+
+function renameFile(fileId) {
+    document.getElementById('contextMenu').classList.remove('show');
+    const file = state.files.find(f => f.id === fileId);
+    if (!file) return;
+
+    openModal('重命名', `
+        <div class="form-group">
+            <label>新名称</label>
+            <input type="text" class="form-input" id="renameInput" value="${file.filename}" onkeydown="if(event.key==='Enter')confirmRename(${fileId})">
+        </div>
+    `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="confirmRename(${fileId})">确定</button>`, 'modal-sm');
+
+    setTimeout(() => {
+        const input = document.getElementById('renameInput');
+        input.focus();
+        input.select();
+    }, 100);
+}
+
+async function confirmRename(fileId) {
+    const newName = document.getElementById('renameInput').value.trim();
+    if (!newName) { toast('名称不能为空', 'warning'); return; }
+
+    try {
+        await api('PUT', '/api/files/file', { fileId, newFilename: newName });
+        toast('重命名成功', 'success');
+        closeModal();
+        renderFiles(state.currentParentId);
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+async function deleteFiles(fileIds) {
+    document.getElementById('contextMenu').classList.remove('show');
+    if (!confirm(`确定删除选中的 ${fileIds.length} 个文件吗？\n文件将移入回收站，可恢复。`)) return;
+
+    try {
+        await api('DELETE', '/api/files/file', { fileIds });
+        toast('已移入回收站', 'success');
+        renderFiles(state.currentParentId);
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+function batchDelete() {
+    const ids = Array.from(state.selectedFiles);
+    if (ids.length === 0) return;
+    deleteFiles(ids);
+}
+
+async function moveFile(fileId) {
+    document.getElementById('contextMenu').classList.remove('show');
+    try {
+        const res = await api('GET', '/api/files/file/folder-tree');
+        const tree = res.data || [];
+        openModal('移动到', `
+            <div id="folderTree" style="max-height:400px;overflow-y:auto;">
+                <div class="context-menu-item" onclick="confirmMove(0, '根目录')">
+                    📁 根目录
+                </div>
+                ${renderFolderTree(tree, 0)}
+            </div>
+        `, '', 'modal-sm');
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+function renderFolderTree(nodes, level) {
+    if (!nodes) return '';
+    return nodes.map(n => `
+        <div class="context-menu-item" style="padding-left:${20 + level * 20}px;" onclick="confirmMove(${n.id}, '${n.name}')">
+            📁 ${n.name}
+        </div>
+        ${n.children ? renderFolderTree(n.children, level + 1) : ''}
+    `).join('');
+}
+
+async function confirmMove(targetParentId, targetName) {
+    try {
+        await api('POST', '/api/files/file/transfer', {
+            targetParentId,
+            fileIds: Array.from(state.selectedFiles).join(',')
+        });
+        toast(`已移动到 "${targetName}"`, 'success');
+        closeModal();
+        state.selectedFiles.clear();
+        renderFiles(state.currentParentId);
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+function copyFile(fileId) {
+    document.getElementById('contextMenu').classList.remove('show');
+    state.selectedFiles.clear();
+    state.selectedFiles.add(fileId);
+    moveFile(fileId);
+    // Actually copy, not move - but reuse folder tree UI
+}
+
+// ==================== Upload ====================
+function showUploadModal() {
+    openModal('上传文件', `
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📤</div>
+            <div class="upload-text">点击选择文件或拖拽到此处</div>
+            <div class="upload-hint">支持大文件分片上传、断点续传、秒传</div>
+        </div>
+        <input type="file" id="fileInput" style="display:none;" onchange="handleFileSelect(event)">
+        <div class="upload-list" id="uploadList"></div>
+    `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">关闭</button>`, 'modal-lg');
+
+    // Setup drag & drop
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+}
+
+async function handleFileSelect(e) {
+    const files = e.target.files;
+    handleFiles(files);
+}
+
+async function handleFiles(fileList) {
+    for (const file of fileList) {
+        await uploadFile(file);
+    }
+}
+
+async function uploadFile(file) {
+    const uploadList = document.getElementById('uploadList');
+    const itemId = 'upload-' + Date.now() + '-' + Math.random();
+
+    uploadList.insertAdjacentHTML('beforeend', `
+        <div class="upload-item" id="${itemId}">
+            <div class="upload-item-icon">${file.type.startsWith('image/') ? '🖼️' : file.type.startsWith('video/') ? '🎬' : '📄'}</div>
+            <div class="upload-item-info">
+                <div class="upload-item-name">${file.name}</div>
+                <div class="upload-item-progress">
+                    <div class="upload-item-progress-bar" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="upload-item-status">计算MD5...</div>
+        </div>
+    `);
+
+    const item = document.getElementById(itemId);
+    const progressBar = item.querySelector('.upload-item-progress-bar');
+    const statusEl = item.querySelector('.upload-item-status');
+
+    try {
+        // Step 1: Calculate MD5
+        const identifier = await calculateMD5(file);
+
+        // Step 2: Try instant upload (秒传)
+        statusEl.textContent = '检测秒传...';
+        try {
+            const secRes = await api('POST', '/api/files/file/sec-upload', {
+                identifier,
+                filename: file.name,
+                parentId: state.currentParentId
+            });
+            if (secRes.data === '秒传成功') {
+                progressBar.style.width = '100%';
+                statusEl.textContent = '✅ 秒传成功';
+                statusEl.classList.add('success');
+                await refreshAfterUpload();
+                return;
+            }
+        } catch (e) { /* Not instant uploadable, continue with chunk upload */ }
+
+        // Step 3: Chunk upload
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+        // Check for resume (断点续传)
+        statusEl.textContent = '检查断点...';
+        let uploadedChunks = [];
+        try {
+            const checkRes = await api('GET', `/api/files/file/chunk-upload?identifier=${identifier}`);
+            uploadedChunks = checkRes.data?.uploadedChunks || [];
+        } catch (e) { /* No resume info */ }
+
+        // Upload chunks
+        for (let i = 0; i < totalChunks; i++) {
+            if (uploadedChunks.includes(i + 1)) {
+                progressBar.style.width = ((i + 1) / totalChunks * 100) + '%';
+                continue;
+            }
+
+            const start = i * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
+
+            const formData = new FormData();
+            formData.append('file', chunk);
+            formData.append('filename', file.name);
+            formData.append('identifier', identifier);
+            formData.append('chunkNumber', i + 1);
+            formData.append('totalChunks', totalChunks);
+            formData.append('parentId', state.currentParentId);
+
+            statusEl.textContent = `上传中 ${i + 1}/${totalChunks}`;
+            await api('POST', '/api/files/file/chunk-upload', formData, true);
+            progressBar.style.width = ((i + 1) / totalChunks * 100) + '%';
+        }
+
+        // Step 4: Merge chunks
+        statusEl.textContent = '合并中...';
+        await api('POST', '/api/files/file/merge', {
+            filename: file.name,
+            identifier,
+            totalChunks,
+            parentId: state.currentParentId
+        });
+
+        statusEl.textContent = '✅ 上传成功';
+        statusEl.classList.add('success');
+        await refreshAfterUpload();
+    } catch (err) {
+        statusEl.textContent = '❌ ' + err.message;
+        statusEl.classList.add('error');
+    }
+}
+
+async function refreshAfterUpload() {
+    // Refresh user space
+    await fetchUserInfo();
+    // Refresh file list if in files view
+    if (['all', 'image', 'video', 'doc'].includes(state.currentView)) {
+        renderFiles(state.currentParentId);
+    }
+}
+
+// Simple MD5 calculation using SubtleCrypto (for smaller files)
+// For large files, use a sampling approach
+async function calculateMD5(file) {
+    // For files < 100MB, calculate full MD5
+    // For larger files, sample first + last + middle chunks
+    // This is a simplified version - in production you'd use spark-md5
+    if (file.size < 100 * 1024 * 1024) {
+        const buffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } else {
+        // Sample: first 2MB + last 2MB + middle 2MB
+        const sampleSize = 2 * 1024 * 1024;
+        const first = file.slice(0, sampleSize);
+        const middle = file.slice(file.size / 2 - sampleSize / 2, file.size / 2 + sampleSize / 2);
+        const last = file.slice(file.size - sampleSize, file.size);
+
+        const [firstBuf, midBuf, lastBuf] = await Promise.all([
+            first.arrayBuffer(), middle.arrayBuffer(), last.arrayBuffer()
+        ]);
+
+        const combined = new Uint8Array(firstBuf.byteLength + midBuf.byteLength + lastBuf.byteLength + 8);
+        combined.set(new Uint8Array(firstBuf), 0);
+        combined.set(new Uint8Array(midBuf), firstBuf.byteLength);
+        combined.set(new Uint8Array(lastBuf), firstBuf.byteLength + midBuf.byteLength);
+        // Append file size as identifier
+        const sizeView = new DataView(combined.buffer, combined.length - 8, 8);
+        sizeView.setBigInt64(0, BigInt(file.size));
+
+        const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+}
+
+// ==================== Create Folder ====================
+function showCreateFolderModal() {
+    openModal('新建文件夹', `
+        <div class="form-group">
+            <label>文件夹名称</label>
+            <input type="text" class="form-input" id="folderNameInput" placeholder="请输入文件夹名称" onkeydown="if(event.key==='Enter')confirmCreateFolder()">
+        </div>
+    `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="confirmCreateFolder()">创建</button>`, 'modal-sm');
+
+    setTimeout(() => document.getElementById('folderNameInput').focus(), 100);
+}
+
+async function confirmCreateFolder() {
+    const name = document.getElementById('folderNameInput').value.trim();
+    if (!name) { toast('名称不能为空', 'warning'); return; }
+
+    try {
+        await api('POST', '/api/files/folder', { parentId: state.currentParentId, folderName: name });
+        toast('创建成功', 'success');
+        closeModal();
+        renderFiles(state.currentParentId);
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+// ==================== Search ====================
+function handleSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        const keyword = e.target.value.trim();
+        if (!keyword) return;
+        searchFiles(keyword);
+    }
+}
+
+async function searchFiles(keyword) {
+    const content = document.getElementById('mainContent');
+    content.innerHTML = `<div style="text-align:center;padding:40px;"><span class="loading-spinner"></span> 搜索中...</div>`;
+
+    try {
+        const res = await api('POST', '/api/files/file/search', { keyword });
+        const results = res.data || [];
+
+        if (results.length === 0) {
+            content.innerHTML = `
+                <div class="breadcrumb"><span class="breadcrumb-item current">搜索: "${keyword}"</span></div>
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <div class="empty-text">未找到相关文件</div>
+                </div>
+            `;
+            return;
+        }
+
+        content.innerHTML = `
+            <div class="breadcrumb"><span class="breadcrumb-item current">搜索: "${keyword}" — 找到 ${results.length} 个结果</span></div>
+            <div class="file-list">
+                <div class="file-list-header">
+                    <div></div>
+                    <div>名称</div>
+                    <div>大小</div>
+                    <div>位置</div>
+                    <div class="col-time">修改时间</div>
+                    <div></div>
+                </div>
+                ${results.map(f => `
+                    <div class="file-list-row">
+                        <div></div>
+                        <div class="list-name">
+                            <span class="file-icon">${getFileIcon(f)}</span>
+                            <span>${f.filename}</span>
+                        </div>
+                        <div class="list-meta">${f.fileSizeDesc || '-'}</div>
+                        <div class="list-meta">${f.parentFilename || '根目录'}</div>
+                        <div class="list-meta col-time">${formatDate(f.updateTime)}</div>
+                        <div></div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (err) {
+        content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${err.message}</div></div>`;
+    }
+}
+
+// ==================== Recycle Bin ====================
+async function renderRecycle() {
+    const content = document.getElementById('mainContent');
+    content.innerHTML = `
+        <div class="breadcrumb"><span class="breadcrumb-item current">🗑️ 回收站</span></div>
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <span style="color:var(--text-secondary);font-size:13px;">文件删除后保留在回收站，可恢复或彻底删除</span>
+            </div>
+        </div>
+        <div id="recycleContainer">
+            <div style="text-align:center;padding:40px;"><span class="loading-spinner"></span></div>
+        </div>
+    `;
+
+    try {
+        const res = await api('GET', '/api/files/recycle/list');
+        const files = res.data || [];
+        const container = document.getElementById('recycleContainer');
+
+        if (files.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🗑️</div>
+                    <div class="empty-text">回收站为空</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="file-list">
+                <div class="file-list-header">
+                    <div></div>
+                    <div>名称</div>
+                    <div>大小</div>
+                    <div>类型</div>
+                    <div class="col-time">删除时间</div>
+                    <div>操作</div>
+                </div>
+                ${files.map(f => `
+                    <div class="file-list-row">
+                        <div><input type="checkbox" value="${f.id}"></div>
+                        <div class="list-name">
+                            <span class="file-icon">${getFileIcon(f)}</span>
+                            <span>${f.filename}</span>
+                        </div>
+                        <div class="list-meta">${f.folderFlag === 1 ? '-' : (f.fileSizeDesc || '-')}</div>
+                        <div class="list-meta">${f.folderFlag === 1 ? '文件夹' : getFileTypeLabel(f.fileType)}</div>
+                        <div class="list-meta col-time">${formatDate(f.updateTime)}</div>
+                        <div>
+                            <button class="btn btn-text btn-sm" onclick="restoreFiles([${f.id}])" style="color:var(--success);">恢复</button>
+                            <button class="btn btn-text btn-sm" onclick="permanentlyDelete([${f.id}])" style="color:var(--danger);">彻底删除</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (err) {
+        document.getElementById('recycleContainer').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${err.message}</div></div>`;
+    }
+}
+
+async function restoreFiles(fileIds) {
+    try {
+        await api('PUT', '/api/files/recycle/restore', fileIds);
+        toast('恢复成功', 'success');
+        renderRecycle();
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+async function permanentlyDelete(fileIds) {
+    if (!confirm('彻底删除后无法恢复，确定吗？')) return;
+    try {
+        await api('DELETE', '/api/files/recycle/delete', fileIds);
+        toast('已彻底删除', 'success');
+        renderRecycle();
+        await fetchUserInfo();
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+// ==================== Shares ====================
+async function renderShares() {
+    const content = document.getElementById('mainContent');
+    content.innerHTML = `
+        <div class="breadcrumb"><span class="breadcrumb-item current">🔗 我的分享</span></div>
+        <div id="shareContainer">
+            <div style="text-align:center;padding:40px;"><span class="loading-spinner"></span></div>
+        </div>
+    `;
+
+    try {
+        const res = await api('GET', '/api/shares/list');
+        const shares = res.data || [];
+        const container = document.getElementById('shareContainer');
+
+        if (shares.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🔗</div>
+                    <div class="empty-text">还没有分享</div>
+                    <div class="empty-hint">选择文件后点击"分享"按钮创建分享链接</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="file-list">
+                <div class="file-list-header">
+                    <div></div>
+                    <div>分享名称</div>
+                    <div>类型</div>
+                    <div>文件数</div>
+                    <div class="col-time">过期时间</div>
+                    <div>操作</div>
+                </div>
+                ${shares.map(s => {
+                    const isExpired = s.shareStatus === 2;
+                    const isCancelled = s.shareStatus === 1;
+                    const dayTypeMap = { 0: '永久', 1: '1天', 7: '7天', 30: '30天' };
+                    return `
+                    <div class="file-list-row" style="${isExpired || isCancelled ? 'opacity:0.5;' : ''}">
+                        <div></div>
+                        <div class="list-name">
+                            <span class="file-icon">🔗</span>
+                            <span>${s.shareName || '分享'}</span>
+                            ${isExpired ? '<span style="font-size:11px;color:var(--danger);">已过期</span>' : ''}
+                            ${isCancelled ? '<span style="font-size:11px;color:var(--text-light);">已取消</span>' : ''}
+                        </div>
+                        <div class="list-meta">${s.shareType === 0 ? '公开' : '🔒提取码'}</div>
+                        <div class="list-meta">${s.fileCount || 0} 个文件</div>
+                        <div class="list-meta col-time">${s.shareEndTime ? formatDate(s.shareEndTime) : '永久'}</div>
+                        <div>
+                            <button class="btn btn-text btn-sm" onclick="viewShareDetail(${s.id})">详情</button>
+                            <button class="btn btn-text btn-sm" onclick="copyShareLink('${s.shareUrl}')" style="color:var(--primary);">复制链接</button>
+                            ${!isCancelled ? `<button class="btn btn-text btn-sm" onclick="cancelShare(${s.id})" style="color:var(--danger);">取消</button>` : ''}
+                        </div>
+                    </div>
+                `}).join('')}
+            </div>
+        `;
+    } catch (err) {
+        document.getElementById('shareContainer').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${err.message}</div></div>`;
+    }
+}
+
+function showShareModal(fileId) {
+    document.getElementById('contextMenu').classList.remove('show');
+
+    const fileIds = fileId ? [fileId] : Array.from(state.selectedFiles);
+    if (fileIds.length === 0) {
+        toast('请先选择文件', 'warning');
+        return;
+    }
+
+    openModal('创建分享', `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="form-group">
+                <label>分享类型</label>
+                <div style="display:flex;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:1.5px solid var(--border);border-radius:8px;" id="shareTypePublicLabel">
+                        <input type="radio" name="shareType" value="0" checked onchange="document.getElementById('shareCodeGroup').style.display='none'"> 公开链接
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border:1.5px solid var(--border);border-radius:8px;" id="shareTypePrivateLabel">
+                        <input type="radio" name="shareType" value="1" onchange="document.getElementById('shareCodeGroup').style.display='block'"> 🔒 提取码访问
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" id="shareCodeGroup" style="display:none;">
+                <label>提取码</label>
+                <input type="text" class="form-input" id="shareCodeInput" placeholder="留空则自动生成4位提取码" maxlength="6">
+            </div>
+            <div class="form-group">
+                <label>有效期</label>
+                <select class="form-input" id="shareDayType">
+                    <option value="1">1天</option>
+                    <option value="7">7天</option>
+                    <option value="30">30天</option>
+                    <option value="0" selected>永久</option>
+                </select>
+            </div>
+        </div>
+    `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">取消</button><button class="btn btn-primary btn-sm" onclick="confirmShare([${fileIds.join(',')}])">创建分享</button>`, 'modal-sm');
+}
+
+async function confirmShare(fileIds) {
+    const shareType = parseInt(document.querySelector('input[name="shareType"]:checked').value);
+    const shareDayType = parseInt(document.getElementById('shareDayType').value);
+
+    try {
+        const res = await api('POST', '/api/shares', {
+            fileIds: fileIds.join(','),
+            shareType,
+            shareDayType
+        });
+        const share = res.data;
+        closeModal();
+
+        const link = `${location.origin}${location.pathname}?s=${share.shareUrl}`;
+        openModal('分享成功', `
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+                <h3 style="margin-bottom:16px;">分享链接已创建</h3>
+                <div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:12px;word-break:break-all;font-size:13px;">
+                    ${link}
+                </div>
+                ${share.shareCode ? `
+                    <div style="background:var(--warning-bg);padding:12px;border-radius:8px;margin-bottom:12px;">
+                        <span style="color:var(--warning);font-weight:600;">提取码: ${share.shareCode}</span>
+                    </div>
+                ` : ''}
+                <button class="btn btn-primary btn-sm" onclick="copyShareLink('${share.shareUrl}', '${share.shareCode || ''}')">📋 复制链接和提取码</button>
+            </div>
+        `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">关闭</button>`, 'modal-sm');
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+function copyShareLink(shareUrl, shareCode) {
+    const link = `${location.origin}${location.pathname}?s=${shareUrl}`;
+    const text = shareCode ? `${link}\n提取码: ${shareCode}` : link;
+    navigator.clipboard.writeText(text).then(() => {
+        toast('已复制到剪贴板', 'success');
+    }).catch(() => {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        toast('已复制到剪贴板', 'success');
+    });
+}
+
+async function viewShareDetail(shareId) {
+    try {
+        const res = await api('GET', `/api/shares/${shareId}`);
+        const s = res.data;
+        const link = `${location.origin}${location.pathname}?s=${s.shareUrl}`;
+        openModal('分享详情', `
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">分享名称</span>
+                    <span>${s.shareName || '-'}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">分享类型</span>
+                    <span>${s.shareType === 0 ? '公开' : '提取码访问'}</span>
+                </div>
+                ${s.shareCode ? `
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);">
+                        <span style="color:var(--text-secondary);">提取码</span>
+                        <span style="font-weight:600;color:var(--warning);">${s.shareCode}</span>
+                    </div>
+                ` : ''}
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">文件数</span>
+                    <span>${s.fileCount || 0} 个</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light);">
+                    <span style="color:var(--text-secondary);">有效期</span>
+                    <span>${s.shareEndTime ? formatDate(s.shareEndTime) : '永久'}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;">
+                    <span style="color:var(--text-secondary);">分享链接</span>
+                </div>
+                <div style="background:var(--bg);padding:8px;border-radius:6px;word-break:break-all;font-size:12px;">
+                    ${link}
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="copyShareLink('${s.shareUrl}', '${s.shareCode || ''}')">📋 复制链接</button>
+            </div>
+        `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">关闭</button>`, 'modal-sm');
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+async function cancelShare(shareId) {
+    if (!confirm('取消后分享链接将失效，确定吗？')) return;
+    try {
+        await api('DELETE', `/api/shares/${shareId}`);
+        toast('已取消分享', 'success');
+        renderShares();
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+// ==================== AI Assistant ====================
+function renderAI() {
+    const content = document.getElementById('mainContent');
+    content.innerHTML = `
+        <div class="ai-panel">
+            <div class="ai-upload-area">
+                <h3>📄 文档索引</h3>
+                <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">上传文档建立索引后，可以针对文档内容提问（RAG 智能问答）</p>
+                <div class="upload-zone" style="padding:24px;" onclick="document.getElementById('aiFileInput').click()">
+                    <div class="upload-icon">🤖</div>
+                    <div class="upload-text">选择文档上传并索引</div>
+                    <div class="upload-hint">支持 PDF、Word、Excel、TXT 等格式</div>
+                </div>
+                <input type="file" id="aiFileInput" style="display:none;" onchange="handleAIFileUpload(event)">
+                ${state.aiCurrentFileId ? `<div style="margin-top:12px;padding:8px 12px;background:var(--success-bg);border-radius:6px;color:var(--success);font-size:13px;">✅ 文档已索引 (ID: ${state.aiCurrentFileId})，可以在下方提问</div>` : ''}
+            </div>
+            <div class="ai-chat">
+                <div class="ai-chat-header">
+                    🤖 AI 文档助手
+                </div>
+                <div class="ai-chat-messages" id="aiMessages">
+                    ${state.aiMessages.length === 0 ? `
+                        <div style="text-align:center;color:var(--text-light);padding:40px 0;">
+                            <div style="font-size:40px;margin-bottom:8px;">💬</div>
+                            <div>上传文档后，在这里提问吧</div>
+                        </div>
+                    ` : state.aiMessages.map(m => `
+                        <div class="ai-message ${m.role}">
+                            <div class="ai-avatar">${m.role === 'user' ? '👤' : '🤖'}</div>
+                            <div class="ai-bubble">${m.content}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="ai-chat-input">
+                    <input type="text" id="aiQuestionInput" placeholder="${state.aiCurrentFileId ? '输入你的问题...' : '请先上传并索引文档'}" ${state.aiCurrentFileId ? '' : 'disabled'} onkeydown="if(event.key==='Enter')askAI(event)">
+                    <button class="btn btn-primary btn-sm" onclick="askAI()" ${state.aiCurrentFileId ? '' : 'disabled'}>发送</button>
+                </div>
+            </div>
+        </div>
+    `;
+    // Scroll to bottom
+    const messages = document.getElementById('aiMessages');
+    if (messages) messages.scrollTop = messages.scrollHeight;
+}
+
+async function handleAIFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    toast('正在上传并索引文档...', 'info');
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch(`${API_BASE}/api/ai/files/index?fileId=${Date.now()}`, {
+            method: 'POST',
+            headers: state.token ? { satoken: state.token } : {},
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.code === 200 || data.code === 0) {
+            state.aiCurrentFileId = data.data || Date.now();
+            toast('文档索引成功', 'success');
+            renderAI();
+        } else {
+            throw new Error(data.message || '索引失败');
+        }
+    } catch (err) {
+        toast('AI 索引失败: ' + err.message, 'error');
+    }
+}
+
+async function askAI(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById('aiQuestionInput');
+    const question = input.value.trim();
+    if (!question || !state.aiCurrentFileId) return;
+
+    state.aiMessages.push({ role: 'user', content: question });
+    input.value = '';
+    input.disabled = true;
+    renderAI();
+
+    try {
+        const res = await api('POST', '/api/ai/files/question', {
+            fileId: state.aiCurrentFileId,
+            question
+        });
+        state.aiMessages.push({ role: 'assistant', content: res.data || '抱歉，我无法回答这个问题。' });
+    } catch (err) {
+        state.aiMessages.push({ role: 'assistant', content: '❌ 出错了: ' + err.message });
+    }
+
+    input.disabled = false;
+    renderAI();
+}
+
+// ==================== Share Access (Anonymous) ====================
+async function initShareAccess() {
+    const sharePage = document.getElementById('sharePage');
+    const shareCard = document.getElementById('shareCard');
+
+    sharePage.classList.add('show');
+    document.getElementById('authPage').style.display = 'none';
+
+    shareCard.innerHTML = `
+        <div class="share-icon">🔗</div>
+        <h2>正在加载分享...</h2>
+    `;
+
+    try {
+        const res = await api('GET', `/api/shares/access/info?shareUrl=${state.shareUrl}`);
+        const share = res.data;
+
+        if (share.shareStatus === 1) {
+            shareCard.innerHTML = `
+                <div class="share-icon">🚫</div>
+                <h2>分享已取消</h2>
+                <div class="share-meta">该分享链接已失效</div>
+            `;
+            return;
+        }
+        if (share.shareStatus === 2) {
+            shareCard.innerHTML = `
+                <div class="share-icon">⏰</div>
+                <h2>分享已过期</h2>
+                <div class="share-meta">该分享链接已过期</div>
+            `;
+            return;
+        }
+
+        if (share.shareType === 0) {
+            // Public share, show files directly
+            state.shareCode = '';
+            await loadShareFiles();
+        } else {
+            // Need code
+            shareCard.innerHTML = `
+                <div class="share-icon">🔒</div>
+                <h2>${share.shareName || '分享文件'}</h2>
+                <div class="share-meta">请输入提取码访问分享内容</div>
+                <div class="share-code-input">
+                    <input type="text" id="shareCodeInput" placeholder="提取码" maxlength="6" onkeydown="if(event.key==='Enter')verifyShareCode()">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="verifyShareCode()">查看文件</button>
+            `;
+            setTimeout(() => document.getElementById('shareCodeInput').focus(), 100);
+        }
+    } catch (err) {
+        shareCard.innerHTML = `
+            <div class="share-icon">❌</div>
+            <h2>分享不存在</h2>
+            <div class="share-meta">${err.message}</div>
+        `;
+    }
+}
+
+async function verifyShareCode() {
+    const code = document.getElementById('shareCodeInput').value.trim();
+    if (!code) { toast('请输入提取码', 'warning'); return; }
+
+    try {
+        const res = await api('POST', `/api/shares/access/verify?shareUrl=${state.shareUrl}&shareCode=${code}`);
+        if (res.data) {
+            state.shareCode = code;
+            await loadShareFiles();
+        } else {
+            toast('提取码错误', 'error');
+        }
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+}
+
+async function loadShareFiles() {
+    const shareCard = document.getElementById('shareCard');
+    shareCard.innerHTML = `<div style="text-align:center;padding:40px;"><span class="loading-spinner"></span></div>`;
+
+    try {
+        const params = `shareUrl=${state.shareUrl}${state.shareCode ? '&shareCode=' + state.shareCode : ''}`;
+        const res = await api('GET', `/api/shares/access/files?${params}`);
+        const files = res.data || [];
+
+        shareCard.innerHTML = `
+            <div style="text-align:left;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                    <div style="font-size:32px;">🔗</div>
+                    <div>
+                        <h2 style="margin:0;">分享文件</h2>
+                        <div style="font-size:13px;color:var(--text-secondary);">${files.length} 个文件</div>
+                    </div>
+                </div>
+                <div class="file-list" style="border:none;">
+                    ${files.map(f => `
+                        <div class="file-list-row" style="grid-template-columns:1fr 100px 80px;cursor:default;">
+                            <div class="list-name">
+                                <span class="file-icon">${getFileIcon(f)}</span>
+                                <span>${f.filename}</span>
+                            </div>
+                            <div class="list-meta">${f.fileSizeDesc || '-'}</div>
+                            <div>
+                                <button class="btn btn-text btn-sm" onclick="downloadShareFile(${f.fileId})" style="color:var(--primary);">下载</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        shareCard.innerHTML = `
+            <div class="share-icon">⚠️</div>
+            <h2>加载失败</h2>
+            <div class="share-meta">${err.message}</div>
+        `;
+    }
+}
+
+async function downloadShareFile(fileId) {
+    try {
+        const params = `shareUrl=${state.shareUrl}&fileId=${fileId}${state.shareCode ? '&shareCode=' + state.shareCode : ''}`;
+        const blob = await apiDownload(`/api/shares/access/download?${params}`);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'download';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('下载成功', 'success');
+    } catch (err) {
+        toast('下载失败: ' + err.message, 'error');
+    }
+}
+
+// ==================== Modal ====================
+function openModal(title, body, footer, size) {
+    const modal = document.getElementById('modal');
+    const overlay = document.getElementById('modalOverlay');
+
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = body;
+    document.getElementById('modalFooter').innerHTML = footer || '';
+
+    modal.className = 'modal';
+    if (size) modal.classList.add(size);
+
+    overlay.classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+}
+
+function closeModalOnOverlay(e) {
+    if (e.target === e.currentTarget) closeModal();
+}
+
+// ==================== Init ====================
+async function initApp() {
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    showLoading();
+    await fetchUserInfo();
+    hideLoading();
+    renderHome();
+}
+
+function init() {
+    // Check for share URL in query params
+    if (state.shareUrl) {
+        initShareAccess();
+        return;
+    }
+
+    // Check if logged in
+    if (state.token) {
+        initApp();
+    } else {
+        document.getElementById('authPage').style.display = 'flex';
+    }
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

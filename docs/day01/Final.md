@@ -56,7 +56,9 @@ git log -1 --oneline
 
 Final 判定：至少 5 个 smoke 断言真实通过，入口能打印启动标识，`git diff --check` 无输出，工作区在提交后为空，且回执中有实际 JDK/Maven/Git 版本、测试结果、提交哈希和日志。任一项不成立，不能发布本日 Final。
 
-本次发布前的真实执行记录（2026-09-06）：JDK 为 Microsoft OpenJDK `17.0.20`，Maven 为 `3.9.10`，Git 为 `2.54.0.windows.1`。`mvn "-Dmaven.repo.local=$repo" clean test` 的 Surefire 汇总是 `Tests run: 2, Failures: 0, Errors: 0, Skipped: 0`；两个测试方法合计执行 8 个非领域断言。入口实际输出为 `cloud-drive-learning Day01 bootstrap: Java 17`，`git diff --check` 无输出。提交哈希、提交日志和提交后的干净状态记录在本日仓库外发布回执。
+本次发布前的真实执行记录（2026-09-06）：JDK 为 Microsoft OpenJDK `17.0.20`，Maven 为 `3.9.10`，Git 为 `2.54.0.windows.1`。`mvn "-Dmaven.repo.local=$repo" clean test` 的 Surefire 汇总是 `Tests run: 2, Failures: 0, Errors: 0, Skipped: 0`；两个测试方法合计执行 7 个非领域断言（`exposesStableBootstrapMetadata` 内 `assertAll` 6 个 + `runsOnTheConfiguredJavaFeature` 1 个，已逐条对照源码核实）。入口实际输出为 `cloud-drive-learning Day01 bootstrap: Java 17`，`git diff --check` 无输出。提交哈希、提交日志和提交后的干净状态记录在本日仓库外发布回执。
+
+> 勘误记录：早期版本曾写"8 个非领域断言"，与源码不符；已修正为 7。
 
 ## 独立复刻任务
 

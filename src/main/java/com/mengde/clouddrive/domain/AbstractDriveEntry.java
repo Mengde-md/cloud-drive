@@ -41,6 +41,22 @@ public abstract class AbstractDriveEntry implements DriveEntry {
         displayName = normalizeDisplayName(requestedName);
     }
 
+    @Override
+    public final boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof DriveEntry entry)) {
+            return false;
+        }
+        return id == entry.id() && ownerId == entry.ownerId();
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(ownerId, id);
+    }
+
     private static long requirePositive(long value, String fieldName) {
         if (value <= 0) {
             throw new IllegalArgumentException(fieldName + " must be positive");

@@ -1,0 +1,48 @@
+package com.mengde.clouddrive.web;
+
+import com.mengde.clouddrive.error.DuplicateEntryException;
+import com.mengde.clouddrive.error.EntryNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.io.IOException;
+
+/**
+ * 全局异常到 HTTP 状态码的映射，是本日“4xx/5xx 真实响应”的落点：
+ * 找不到条目 → 404；重复键 → 409；非法参数/无法解析的请求体 → 400；
+ * 快照 IO 失败 → 500。未映射的异常仍走 Spring Boot 默认的 500。
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(EntryNotFoundException.class)
+    public ResponseEntity<ApiError> handleEntryNotFound(EntryNotFoundException exception) {
+        return respond(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateEntryException.class)
+    public ResponseEntity<ApiError> handleDuplicateEntry(DuplicateEntryException exception) {
+        return respond(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class,
+            HttpMessageNotReadableException.class,
+            MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ApiError> handleBadRequest(Exception exception) {
+        return respond(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ApiError> handleSnapshotIo(IOException exception) {
+        return respond(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+    }
+
+    private ResponseEntity<ApiError> respond(HttpStatus status, String message) {
+        return ResponseEntity.status(status)
+                .body(new ApiError(status.value(), status.getReasonPhrase(), message));
+    }
+}

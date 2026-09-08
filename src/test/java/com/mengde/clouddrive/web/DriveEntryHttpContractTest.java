@@ -35,7 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(
         classes = DriveEntryWebApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "clouddrive.snapshot.path=target/day06-http-contract-snapshot.txt")
+        properties = {
+                "clouddrive.snapshot.path=target/day06-http-contract-snapshot.txt",
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+        })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DriveEntryHttpContractTest {
 

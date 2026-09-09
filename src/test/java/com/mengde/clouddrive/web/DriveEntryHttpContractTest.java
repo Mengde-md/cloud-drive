@@ -183,6 +183,21 @@ class DriveEntryHttpContractTest {
     }
 
     @Test
+    void createMissingKindReturnsBeanValidation400WithUnifiedErrorBody() {
+        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
+                {"id": 73, "ownerId": 7, "parentId": null,
+                 "displayName": "缺少类型"}
+                """, json()), Map.class);
+
+        assertAll(
+                () -> assertEquals(400, response.getStatusCode().value()),
+                () -> assertEquals("Bad Request", response.getBody().get("error")),
+                () -> assertTrue(String.valueOf(response.getBody().get("message"))
+                        .contains("kind must not be blank"))
+        );
+    }
+
+    @Test
     void createNonPositiveIdReturns400() {
         ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
                 {"id": 0, "ownerId": 7, "parentId": null,

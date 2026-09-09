@@ -1,6 +1,7 @@
 package com.mengde.clouddrive.web;
 
 import com.mengde.clouddrive.domain.DriveEntry;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +34,7 @@ public class DriveEntryController {
     }
 
     @PostMapping
-    public ResponseEntity<EntryResponse> create(@RequestBody EntryCreateRequest request) {
+    public ResponseEntity<EntryResponse> create(@Valid @RequestBody EntryCreateRequest request) {
         DriveEntry created = catalog.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(EntryResponse.from(created));
     }
@@ -44,7 +45,7 @@ public class DriveEntryController {
     }
 
     @PutMapping("/{id}/name")
-    public ResponseEntity<Void> rename(@PathVariable("id") long id, @RequestBody RenameRequest request) {
+    public ResponseEntity<Void> rename(@PathVariable("id") long id, @Valid @RequestBody RenameRequest request) {
         catalog.rename(id, request.displayName());
         return ResponseEntity.noContent().build();
     }

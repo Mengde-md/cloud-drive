@@ -4,6 +4,9 @@ import com.mengde.clouddrive.domain.DirectoryEntry;
 import com.mengde.clouddrive.domain.DocumentEntry;
 import com.mengde.clouddrive.domain.DriveEntry;
 import com.mengde.clouddrive.domain.EntryKind;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.Locale;
 
@@ -19,12 +22,12 @@ import java.util.Locale;
  * @param byteSize    文档字节数，仅 DOCUMENT 使用，不能为负
  */
 public record EntryCreateRequest(
-        long id,
-        long ownerId,
-        Long parentId,
-        String displayName,
-        String kind,
-        Long byteSize) {
+        @Positive(message = "id must be positive") long id,
+        @Positive(message = "ownerId must be positive") long ownerId,
+        @Positive(message = "parentId must be positive when present") Long parentId,
+        @NotBlank(message = "displayName must not be blank") String displayName,
+        @NotBlank(message = "kind must not be blank") String kind,
+        @PositiveOrZero(message = "byteSize must not be negative") Long byteSize) {
 
     public DriveEntry toEntry() {
         EntryKind entryKind = parseKind(kind);

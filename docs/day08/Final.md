@@ -4,7 +4,7 @@
 
 Day08 是复盘型 Day。**唯一增量**是三份基于已提交代码的学习交付：本 Final、阶段一教材与仓库外发布回执。复盘对象只限于 `InMemoryEntryIndex` 中的 `HashMap<Long, DriveEntry>`、`DriveEntryCatalog` 的对象级 `synchronized`，以及 `SnapshotTaskExecutor` 中的 `ConcurrentHashMap` 在途任务表。
 
-**禁止**新增、删除或改写业务代码、测试、数据库迁移、Spring Bean、Redis、认证、锁实现或下一日 JVM 内容；也禁止把“换成 ConcurrentHashMap”写成不经验证的性能优化。本日不改变 Day01–07 的 72 测试基线。
+**禁止**新增、删除或改写业务代码、测试、数据库迁移、Spring Bean、Redis、认证、锁实现或下一日 JVM 内容；也禁止把“换成 ConcurrentHashMap”写成不经验证的性能优化。历史 Day07 为72项测试；本轮接手的 `1793135` 包含 Day06 校验补正，当前回归为76项，Day08不增加项目测试。
 
 ## Checkpoint 0 实际起点
 
@@ -22,7 +22,7 @@ Day08 是复盘型 Day。**唯一增量**是三份基于已提交代码的学习
 
 `entry.id()` 是 `long`，放入 `Map<Long, DriveEntry>` 时自动装箱为 `Long`。HashMap 先根据 `Long` 的哈希值做高位扰动，再用 `(tableLength - 1) & hash` 定位桶；表长保持 2 的幂，因此位运算可代替取模。目标桶为空就放入首节点；不为空则先比较 hash 和 key 的 `equals`，不等才沿冲突链继续找。
 
-当碰撞节点达到树化阈值且表容量已足够大时，JDK 17 的 HashMap 才会把该桶转为红黑树；表还小则优先扩容。默认负载因子为 0.75，达到阈值会扩容。扩容到两倍时，旧节点只会留在原索引，或移动到“原索引 + oldCapacity”，由 `hash & oldCapacity` 决定。这些规则解释了平均 O(1) 的来源，也说明极端碰撞、扩容和树化仍会影响常数与延迟。
+当碰撞节点达到树化阈值且表容量已足够大时，JDK 17 的 HashMap 才会把该桶转为红黑树；表还小则优先扩容。默认负载因子为 0.75，超过阈值会扩容。扩容到两倍时，旧节点只会留在原索引，或移动到“原索引 + oldCapacity”，由 `hash & oldCapacity` 决定。这些规则解释了平均 O(1) 的来源，也说明极端碰撞、扩容和树化仍会影响常数与延迟。
 
 这里要特别区分两个层次：当前索引的键是 `Long`，所以查重依赖的是 **Long 的值相等规则**，不是 `DriveEntry.equals/hashCode`。Day03 的 `AbstractDriveEntry` 确实以 `(ownerId, id)` 实现逻辑相等和配套哈希；它在把 DriveEntry 放进 `HashSet<DriveEntry>` 或作为 `Map<DriveEntry, ...>` 的键时才直接生效。不能因为项目里同时出现了两者，就错误地说 `entriesById` 的桶定位依赖了 DriveEntry 的 `hashCode`。
 
@@ -46,13 +46,50 @@ Day08 是复盘型 Day。**唯一增量**是三份基于已提交代码的学习
 2. **错误修复：认为 HashMap 的 putIfAbsent 已经并发安全。** 证据是 `DriveEntryCatalog` 明确为全部目录入口加 `synchronized`，并维护两个集合；修正是把“单结构的按键原子操作”和“多结构业务不变量”分开描述。
 3. **错误承诺：把在途去重当成永久幂等。** `SnapshotTaskExecutor` 的类注释明确限定为 process-local coalescing，且 finally 会删除 key；修正是在面试中限定时间窗口、进程边界与副作用边界，并说明跨 JVM 要另行设计。
 
-本日没有代码 diff，因此不新增单测。回归门禁仍必须在用户的本机 PowerShell 真实运行；Codex 当前受限运行时曾在 JDK NIO 内部回环 Pipe 上失败，不能据此篡改代码、跳过或伪造 Maven 结果。
+本日没有代码 diff，因此不新增单测。2026-09-10 已在当前终端真实回归：默认 Pipe 在 UnixDomainSockets.connect 失败；仅指定可用 socket 临时目录后，完整76项测试通过。不能继续沿用“本终端无法验证”的旧结论，具体对照见下文。
 
 ## Final 验收记录
 
 - 已阅读并对照三处源码及两类测试：`InMemoryEntryIndexTest` 覆盖重复 id 不覆盖首对象与缺失查询；`SnapshotTaskExecutorIdempotencyTest` 覆盖同 key 共用 future 和只消费一次；容量、失败与异步快照集成测试覆盖拒绝后的清理、失败后的重试和 Day04 快照协作。
-- 已保持 Day01–07 代码与测试不变；Day08 提交仅应包含 `docs/day08/Final.md`。
-- 当前可复核测试基线来自 Day07 的真实原始结果：72 run / 0 failures / 0 errors / BUILD SUCCESS。Day08 发布前仍需以 `verify_day.ps1 -DayNN 8` 在本机 PowerShell 重跑，11/11 PASS 才能宣称 Day08 完成。
+- 本轮保持所有生产代码与项目测试不变；代码仓库只修订本 Final，完整实验源代码保存在外部教材中，不加入 src。
+- 历史72项来自 Day07；本轮已真实运行全量 Maven：Tests run: 76, Failures: 0, Errors: 0, Skipped: 0，BUILD SUCCESS（11.831 s，2026-09-10）。
+- 独立教材实验 Day08MapLab：退出码0、LAB_PASS；与项目76项测试分别计数。代码与教材对应的实验输出已保存。
+- 最终机器门在本 Final 提交且代码工作区干净后执行。真实结果存放于文档仓库 `阶段一/Day08_验收证据/acceptance.log`，发布回执记录具体提交；不能用本段文字代替机器门。
+- 人工学习门待用户完成，不代填。
+
+### 本轮环境诊断：证据与可复用命令
+
+默认完整回归为76项、0失败、17启动错误，生产30类和测试18类正常编译，MySQL测试通过，HTTP启动失败。根异常：
+
+```text
+java.io.IOException: Unable to establish loopback connection
+Caused by: java.net.SocketException: Invalid argument: connect
+at sun.nio.ch.UnixDomainSockets.connect0
+```
+
+自证得到：JDK17.0.20/Maven3.9.10，遗留CLASSPATH非空，其余四个注入变量为空。清空子进程注入变量后，最小 PipeProbe 仍失败；加 preferIPv4Stack=true 仍失败。读取本机 src.zip 中 PipeImpl、UnixDomainSockets、UnixDomainSocketsUtil，发现这里优先用 Unix-domain socket，默认 socket 目录来自 TEMP，故 IPv4 参数没有改变该失败分支。
+
+只设置 `-Djdk.net.unixdomain.tmpdir=C:\Environment\cdl-java-sockets` 后，同一个 PipeProbe 输出 PIPE_PASS。仓库保持原路径、源码不变，全量回归76项全绿。这定位到当前运行条件下默认本地 socket 路径不可用；尚未证明更底层原因是编码、重定向或其他Windows因素，不外推为所有中文路径有问题。
+
+仅在遇到相同堆栈且对照探针通过时使用：
+
+```powershell
+$env:JAVA_HOME = 'C:\Environment\jdk-17'
+$env:Path = "C:\Environment\jdk-17\bin;C:\Environment\maven\bin;C:\Program Files\Git\cmd;$env:Path"
+Remove-Item Env:MAVEN_OPTS,Env:JDK_JAVAC_OPTIONS,Env:_JAVA_OPTIONS,Env:JAVA_TOOL_OPTIONS,Env:CLASSPATH -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force 'C:\Environment\cdl-java-sockets' | Out-Null
+$env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=C:\Environment\cdl-java-sockets'
+mvn -f '<唯一仓库>\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' clean test
+```
+
+本轮命令只改变执行子进程及其子进程的环境，没有写入系统环境变量、JDK配置、pom或全局网络设置。完整日志保存在文档仓库的阶段一/Day08_验收证据；默认失败与成功记录分别保留，不能删除失败记录来制造一直全绿的印象。[官方socket临时目录说明](https://docs.oracle.com/en/java/javase/16/core/networking-properties.html)
+
+### 已识别的并发证据边界
+
+- 当前 execute 先 complete/completeExceptionally，再 finally remove。Future完成不保证清理完成；立即重试可能短暂取到旧Future，已有测试即时检查inFlight=0也有调度敏感性。本次全绿不消除该风险。
+- Catalog的锁只覆盖同一对象的同步方法，不负责异常回滚，不自动保护返回的可变领域对象；List.copyOf只冻结列表结构。
+- Day08MapLab 用同步回调观察完成/清理顺序，用屏障证明CHM上分离get/put会丢更新，并用merge验证按键原子更新。这是教材独立实验，不是对既有执行器的新压力测试。
+- 本轮只记录边界，不改变执行器合同；Day12的HTTP共享Catalog测试隔离债务仍保留。
 
 ## 独立复刻任务
 
@@ -70,4 +107,4 @@ Day08 是复盘型 Day。**唯一增量**是三份基于已提交代码的学习
 
 ## 明日唯一输入
 
-Day09 唯一输入 = 本 Day08 的 HashMap/ConcurrentHashMap 复盘材料、Day07 的 72 测试基线与 Day08 验收输出。Day09 只做 JVM 内存、GC、类加载和调优复盘；禁止新增业务代码、并发实现、Spring/数据库/Redis 功能。
+Day09 唯一输入 = 本 Day08 的 HashMap/ConcurrentHashMap 复盘材料、当前仓库的76项测试基线与 Day08 验收输出。Day09 只做 JVM 内存、GC、类加载和调优复盘；禁止新增业务代码、并发实现、Spring/数据库/Redis 功能。

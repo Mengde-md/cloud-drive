@@ -108,3 +108,20 @@ mvn -f '<唯一仓库>\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' clean
 ## 明日唯一输入
 
 Day09 唯一输入 = 本 Day08 的 HashMap/ConcurrentHashMap 复盘材料、当前仓库的76项测试基线与 Day08 验收输出。Day09 只做 JVM 内存、GC、类加载和调优复盘；禁止新增业务代码、并发实现、Spring/数据库/Redis 功能。
+
+## 教材自审（Day02/Day05 对照）
+
+> 本表只评估教材交付；工程门仍以 `verify_day.ps1` 的真实输出为准。审计时已重新打开教材第 19 节点名的项目源码和测试，未以关键词搜索替代阅读。
+
+| Day02/Day05 质量项 | Day08 教材位置 | 已核对的真实证据 | 结论 |
+|---|---|---|---|
+| 前日衔接与真实问题 | 第 0 段、原第 1 节 | Day07 MyBatis/Flyway 已存在；Day06 Catalog 与 Day05 executor 仍是本日分析对象 | 通过 |
+| 项目生产源码走读 | 第 19.1、19.2、19.4、19.5 节 | `InMemoryEntryIndex.java`、`DriveEntryCatalog.java`、`SnapshotTaskExecutor.java` | 通过 |
+| 项目测试走读与测试矩阵 | 第 19.1、19.3、19.6 节 | `InMemoryEntryIndexTest.java`、`SnapshotTaskExecutorIdempotencyTest.java`、`SnapshotTaskExecutorCapacityTest.java` | 通过 |
+| 原理回扣项目边界 | 第 19.2、19.4、19.5 节 | Long key 与 Day03 对象相等的区别；跨集合不变量；单 JVM 在途合并 | 通过 |
+| 三类以上 Debug | 第 19.7--19.10 节 | 键类型误判、跨集合半更新、拒绝清理、跨 JVM 误承诺；均含证据与回归 | 通过 |
+| 独立实验不冒充项目实现 | 第 19.11 节、原 MapLab 节 | 明确标注 MapLab 仅为补充，主线是项目源码/测试 | 通过 |
+| 阶段题、独立复刻、面试表达 | 第 19.11 节、原面试题与独立复刻节 | LeetCode、SQL `EXPLAIN`、Java 题、TaskJoinRegistry、简历表达 | 通过 |
+| 运行证据与范围边界 | Checkpoint 0/2、Final 验收记录、第 19.11 节 | 历史 76 项全绿事实；本次只改教材/Final，不改 Day08 业务能力 | 通过 |
+
+**审计结论**：Day08 的工程提交与测试基线保持原样；教材已补齐真实项目源码/测试走读和测试矩阵。用户人工学习门（闭卷解释、闭卷复刻、错因、题单记录）仍待用户自行完成，AI 不得代填。

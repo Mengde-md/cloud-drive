@@ -66,3 +66,16 @@ Day10 lab 位于文档仓库 `阶段一/Day10_验收证据`，不加入 `src`。
 ## 明日唯一输入
 
 输入是 Day10 Final、独立 deadlock dump、干净提交与机器闸门。Day11 只学习 IOC/AOP/Bean 生命周期、配置绑定和 Profile，不接事务、不加认证、不改写当前业务链。
+
+## 教材自审（Day02/Day05 对照）
+
+| 质量项 | Day10 教材位置 | 真实证据 | 结论 |
+|---|---|---|---|
+| 前日衔接与真实问题 | 第 13 节 | Day05 executor、Day08 CHM、Day09 线程/队列诊断 | 通过 |
+| 项目生产源码走读 | 第 14--17 节 | `DriveEntryCatalog.java`、`SnapshotTaskExecutor.java`、线程工厂 | 通过 |
+| 项目测试走读与矩阵 | 第 18 节 | Idempotency、Capacity、Failure 三组 executor 测试 | 通过 |
+| 原理回扣项目 | 第 15--19 节 | monitor、CHM、队列、happens-before、线程状态 | 通过 |
+| 三类以上 Debug | 第 20 节 Debug 1--Debug 5 | volatile、同步范围、拒绝清理、死锁判断、Lock 释放 | 通过 |
+| 复刻、阶段题、面试 | 第 21 节 | 有界任务执行器、LC1114、事务锁 SQL、原语选型 | 通过 |
+
+**审计结论**：Day10 工程事实不变；教材已补齐从项目源码、测试和线程 dump 证据出发的完整复盘。人工学习门仍由用户完成。

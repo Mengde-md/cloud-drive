@@ -82,3 +82,18 @@ GC 的核心是从 Roots 识别可达对象，再回收不可达对象；具体�
 ## 明日唯一输入
 
 输入是本 Final、Day09 机器闸门通过后的干净提交和独立诊断证据。Day10 只复盘 `synchronized`、`volatile`、Lock、线程状态与死锁排查；不得提前修改 CloudDrive 业务逻辑、Spring、事务或缓存。
+
+## 教材自审（Day02/Day05 对照）
+
+| Day02/Day05 质量项 | Day09 教材位置 | 已重新读取的真实证据 | 结论 |
+|---|---|---|---|
+| 前日衔接与真实问题 | 原第 1 节、返工第 14 节 | Day08 的 Map/CHM 边界，Catalog 与 executor 的引用链问题 | 通过 |
+| 项目生产源码走读 | 第 14.1--14.3 节 | `DriveEntryCatalog.java`、`SnapshotTaskExecutor.java`、`EntrySnapshotStore.java` | 通过 |
+| 项目测试走读与测试矩阵 | 第 14.1、14.4、14.5 节 | `SnapshotTaskExecutorFailureTest.java`、`SnapshotTaskExecutorSnapshotIntegrationTest.java`、`DriveEntryMapperTest.java` | 通过 |
+| JVM 原理回扣项目 | 第 14.2--14.5 节 | GC Roots、队列/future 引用、heap 与 native 资源、class loader/context 边界 | 通过 |
+| 三类以上 Debug | 第 14.6--14.9 节 | 单次 histogram、Map 保活、失败清理、jcmd attach；均包含证据和回归 | 通过 |
+| 独立实验不冒充项目实现 | 第 14.10 节 | lab 仅训练 jcmd/class 初始化，明确回扣两条项目引用链 | 通过 |
+| 阶段题、独立复刻、面试表达 | 第 14.10 节、原独立复刻与面试题 | LC239、事务/锁 SQL、类初始化 Java 题、独立诊断进程、项目化回答 | 通过 |
+| 运行证据与范围边界 | Checkpoint 0/2、Final 验收记录 | 既有 Day09 jcmd 证据与 76 项工程基线；本次未改代码、依赖或 JVM 参数 | 通过 |
+
+**审计结论**：Day09 工程提交和诊断实验的历史事实保持不变；教材已补齐以项目资产为主线的完整闭环。用户人工学习门仍需自行完成，AI 不得代填。

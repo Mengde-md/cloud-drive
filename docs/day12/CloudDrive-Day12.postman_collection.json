@@ -1,0 +1,10 @@
+{
+  "info": {"name": "CloudDrive Day12 HTTP-MySQL Contract", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [{"key": "baseUrl", "value": "http://localhost:8080"}],
+  "item": [
+    {"name": "create root directory", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/entries", "body": {"mode": "raw", "raw": "{\n  \"id\": 1201, \"ownerId\": 7, \"parentId\": null,\n  \"displayName\": \"Day12 root\", \"kind\": \"DIRECTORY\"\n}"}}},
+    {"name": "create child document", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/entries", "body": {"mode": "raw", "raw": "{\n  \"id\": 1202, \"ownerId\": 7, \"parentId\": 1201,\n  \"displayName\": \"Day12 child\", \"kind\": \"DOCUMENT\", \"byteSize\": 128\n}"}}},
+    {"name": "missing parent is 404", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{baseUrl}}/api/entries", "body": {"mode": "raw", "raw": "{\"id\":1203,\"ownerId\":7,\"parentId\":999999,\"displayName\":\"orphan\",\"kind\":\"DOCUMENT\",\"byteSize\":1}"}}},
+    {"name": "find after restart", "request": {"method": "GET", "url": "{{baseUrl}}/api/entries/1202"}}
+  ]
+}

@@ -46,14 +46,15 @@ Day07 已有 MyBatis Mapper、Repository、Flyway 表和真实 MySQL 测试，�
 
 ## 教材自审（Day02/Day05 对照）
 
-| 质量项 | 教材位置/真实资产 | 结论 |
-|---|---|---|
-| 前日衔接与真实问题 | Day11 IOC/AOP 与 Day07 Repository；Controller 原先直连内存 Catalog | 通过 |
-| 项目源码走读 | `DriveEntryApplicationService`、Controller、Repository、启动类、配置 | 通过 |
-| 项目测试走读与测试矩阵 | `DriveEntryHttpContractTest`、`SnapshotHttpFailureTest`、Mapper/Repository 测试 | 通过 |
-| 三类 Debug | Bean 扫描、共享测试状态、异步事务、重复主键竞争 | 通过 |
-| 阶段题、独立复刻、面试 | 教材第 7--9 节 | 通过 |
+| 质量项 | 教材位置 | 已重新打开的真实资产 | 审计结论与未覆盖边界 |
+|---|---|---|---|
+| 前日衔接与真实问题 | 第 1、9--12 节 | Day11 Controller/代理边界、Day07 Repository、Day06 Catalog | 通过；不把内存 Catalog 与数据库状态混称同一存储 |
+| 项目生产源码逐段走读 | 第 10--14、21 节 | `DriveEntryWebApplication`、`DriveEntryController`、`DriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、`application.properties` | 通过；未实现认证、缓存、上传或跨实例幂等 |
+| 项目测试走读与测试矩阵 | 第 15--16 节 | `DriveEntryHttpContractTest`、`SnapshotHttpFailureTest`、`DriveEntryRepositoryTest`、`DriveEntryMapperTest` | 通过；HTTP/MySQL 合同不等于浏览器端到端或并发压测 |
+| SQL/事务原理回扣项目 | 第 14、19、21 节 | `V1__create_drive_entries.sql`、主键查询、Service `@Transactional` | 通过；MVCC 双会话与手工 EXPLAIN 是用户待执行实验，不伪称已跑 |
+| 六类 Debug | Debug 1--6、第 22 节 | Bean 扫描、测试污染、异步边界、Mapper、重复键、重启检查 | 通过；每类均给出输入、预测、证据、修复和回归 |
+| API、独立复刻、阶段题、面试 | 第 17--18、23--24 节 | Postman Collection、LC207、SQL EXPLAIN、动态代理题、答辩口述 | 通过；Postman 重启后 GET 需用户真实记录 |
 
 ## 明日唯一输入
 
-输入是本日事务应用服务、MySQL HTTP 合同证据、Postman Collection 和干净提交。Day13 只复盘设计模式与 Spring 对应关系；不新增业务功能。
+输入是本日事务应用服务、MySQL HTTP 合同证据、Postman Collection 和干净提交。Day13 只复盘设计模式与 Spring 对应关系；在用户完成手工重启验证与人工学习门前不新增业务功能。

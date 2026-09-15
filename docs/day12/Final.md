@@ -49,11 +49,13 @@ Day07 已有 MyBatis Mapper、Repository、Flyway 表和真实 MySQL 测试，�
 | 质量项 | 教材位置 | 已重新打开的真实资产 | 审计结论与未覆盖边界 |
 |---|---|---|---|
 | 前日衔接与真实问题 | 第 1、9--12 节 | Day11 Controller/代理边界、Day07 Repository、Day06 Catalog | 通过；不把内存 Catalog 与数据库状态混称同一存储 |
-| 项目源码（生产）逐段走读 | 第 10--14、21 节 | `DriveEntryWebApplication`、`DriveEntryController`、`DriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、`application.properties` | 通过；未实现认证、缓存、上传或跨实例幂等 |
-| 项目测试走读与测试矩阵 | 第 15--16 节 | `DriveEntryHttpContractTest`、`SnapshotHttpFailureTest`、`DriveEntryRepositoryTest`、`DriveEntryMapperTest` | 通过；HTTP/MySQL 合同不等于浏览器端到端或并发压测 |
-| SQL/事务原理回扣项目 | 第 14、19、21 节 | `V1__create_drive_entries.sql`、主键查询、Service `@Transactional` | 通过；MVCC 双会话与手工 EXPLAIN 是用户待执行实验，不伪称已跑 |
-| 六类 Debug | Debug 1--6、第 22 节 | Bean 扫描、测试污染、异步边界、Mapper、重复键、重启检查 | 通过；每类均给出输入、预测、证据、修复和回归 |
-| API、独立复刻、阶段题、面试 | 第 17--18、23--24 节 | Postman Collection、LC207、SQL EXPLAIN、动态代理题、答辩口述 | 通过；Postman 重启后 GET 需用户真实记录 |
+| 项目源码（生产）逐段走读 | 第 10--14、21、34--36 节 | `DriveEntryWebApplication`、`DriveEntryController`、`DriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、`application.properties` | 通过；未实现认证、缓存、上传或跨实例幂等 |
+| 项目测试走读与测试矩阵 | 第 15--16、33 节 | `DriveEntryHttpContractTest`、`SnapshotHttpFailureTest`、`DriveEntryRepositoryTest`、`DriveEntryMapperTest` | 通过；HTTP/MySQL 合同不等于浏览器端到端或并发压测 |
+| SQL/事务原理回扣项目 | 第 14、19、21、36--38 节 | `V1__create_drive_entries.sql`、主键查询、Service `@Transactional` | 通过；MVCC 双会话与手工 EXPLAIN 是用户待执行实验，不伪称已跑 |
+| 六类 Debug | Debug 1--6、第 22、37 节 | Bean 扫描、测试污染、异步边界、Mapper、重复键、重启检查 | 通过；每类均给出输入、预测、证据、修复和回归 |
+| API、独立复刻、阶段题、面试 | 第 17--18、23--24、37--38 节 | Postman Collection、LC207、SQL EXPLAIN、动态代理题、答辩口述 | 通过；Postman 重启后 GET 需用户真实记录 |
+
+**返工复审记录（2026-09-15）**：教材从 74 行/3,799 字符/1 个 Java 片段扩展为 615 行/29,226 字符/13 个 Java 片段，并补齐真实 HTTP 合同逐例走读、异常翻译链、事务代理三个反例、配置与重启证据链、SQL 小卷和闭卷复盘。此结论只表示教材交付的素材完整度已复审；Postman 重启、真实 `EXPLAIN`、MVCC 双会话和闭卷复刻仍只能由学习者亲自记录。
 
 ## 明日唯一输入
 

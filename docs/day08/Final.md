@@ -105,10 +105,6 @@ mvn -f '<唯一仓库>\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' clean
 6. 追问：`inFlight.remove(taskKey, result)` 为什么传入 value？如果用无条件 `remove(key)`，在失败重试交错时可能损坏什么状态？
 7. 追问：同 key 合并如何降低重复快照写入？为什么 JVM 重启后它不能替代数据库唯一键、消息幂等键或分布式协调？
 
-## 明日唯一输入
-
-Day09 唯一输入 = 本 Day08 的 HashMap/ConcurrentHashMap 复盘材料、当前仓库的76项测试基线与 Day08 验收输出。Day09 只做 JVM 内存、GC、类加载和调优复盘；禁止新增业务代码、并发实现、Spring/数据库/Redis 功能。
-
 ## 教材自审（Day02/Day05 对照）
 
 > 本表只评估教材交付；工程门仍以 `verify_day.ps1` 的真实输出为准。审计时已重新打开教材第 19 节点名的项目源码和测试，未以关键词搜索替代阅读。
@@ -125,3 +121,7 @@ Day09 唯一输入 = 本 Day08 的 HashMap/ConcurrentHashMap 复盘材料、当�
 | 运行证据与范围边界 | Checkpoint 0/2、Final 验收记录、第 19.11 节 | 历史 76 项全绿事实；本次只改教材/Final，不改 Day08 业务能力 | 通过 |
 
 **审计结论**：Day08 的工程提交与测试基线保持原样；教材已补齐真实项目源码/测试走读和测试矩阵。用户人工学习门（闭卷解释、闭卷复刻、错因、题单记录）仍待用户自行完成，AI 不得代填。
+
+## 明日唯一输入
+
+Day09 唯一输入 = 本 Day08 的 HashMap/ConcurrentHashMap 复盘材料、当前仓库的76项测试基线与 Day08 验收输出。Day09 只做 JVM 内存、GC、类加载和调优复盘；禁止新增业务代码、并发实现、Spring/数据库/Redis 功能。

@@ -64,6 +64,21 @@ AOP 通常由代理在调用边界织入横切行为，例如日志、鉴权、�
 6. **Profile 能做什么？** 按环境选择 Bean/配置，不能作为运行中任意请求的权限开关。
 7. **简历如何讲？** “我基于网盘 Web 入口梳理组件扫描、构造器注入和配置 Bean；通过独立 Spring context 验证 profile、属性注入、生命周期及代理拦截，并把测试依赖替换与生产装配边界区分开。”
 
+## 教材自审（Day02/Day05 对照）
+
+| 质量项 | Day11 教材位置 | 重新核对的真实证据 | 结论 |
+|---|---|---|---|
+| 前日衔接与真实问题 | 第 0、1 节 | Day10 的并发边界之后，Controller、Catalog、SnapshotConfiguration 与测试替换 Bean 的装配边界 | 通过 |
+| 项目生产源码走读 | 第 2--6、27--28、31 节 | `DriveEntryWebApplication.java`、`DriveEntryController.java`、`SnapshotConfiguration.java`、`GlobalExceptionHandler.java` | 通过 |
+| 项目测试走读与测试矩阵 | 第 7、29--30 节 | `DriveEntryHttpContractTest.java`、`RequestValidationContractTest.java`、`SnapshotHttpFailureTest.java`、`DriveEntryMapperTest.java` | 通过 |
+| 原理回扣项目 | 第 16--24、27--31 节 | 组件扫描、构造器注入、MVC 映射、DTO 校验、异常协议、MyBatis 测试代理与资源关闭边界 | 通过 |
+| 三类以上 Debug | 第 8--12、32 节 | Bean 缺失、404、校验未生效、测试污染、异步事务误判、重复 id 映射 | 通过 |
+| 独立实验不冒充项目实现 | 第 25 节及 Spring context lab | lab 只验证 Profile、生命周期与代理；项目结论以 Controller、Handler 和 HTTP/Mapper 测试为准 | 通过 |
+| 独立复刻、阶段题、面试表达 | 第 13--15、33 节 | MVC 分支图、fake Repository 构造器注入、测试分层、配置故障、两分钟答辩口述 | 通过 |
+| 运行证据与范围边界 | Checkpoint 0/2、Final 验收记录 | 本日未改项目代码、测试、pom 或迁移；历史 76 项基线与 lab 输出分开陈述 | 通过 |
+
+**审计结论**：Day11 的独立 Spring context 实验只作原理验证；完整教材已用当前 Boot 源码、HTTP 测试与 Mapper 测试闭环。人工学习门仍待用户自行完成，AI 不得代填。
+
 ## 明日唯一输入
 
 输入是 Day11 Final、独立 Spring context 输出、干净提交与机器闸门。Day12 才首次引入 `@Transactional`、HTTP→application→MySQL 接线、合同测试隔离和 OpenAPI/Postman；不提前实现这些能力。

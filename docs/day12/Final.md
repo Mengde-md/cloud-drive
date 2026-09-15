@@ -49,7 +49,7 @@ Day07 已有 MyBatis Mapper、Repository、Flyway 表和真实 MySQL 测试，�
 | 质量项 | 教材位置 | 已重新打开的真实资产 | 审计结论与未覆盖边界 |
 |---|---|---|---|
 | 前日衔接与真实问题 | 第 1、9--12 节 | Day11 Controller/代理边界、Day07 Repository、Day06 Catalog | 通过；不把内存 Catalog 与数据库状态混称同一存储 |
-| 项目生产源码逐段走读 | 第 10--14、21 节 | `DriveEntryWebApplication`、`DriveEntryController`、`DriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、`application.properties` | 通过；未实现认证、缓存、上传或跨实例幂等 |
+| 项目源码（生产）逐段走读 | 第 10--14、21 节 | `DriveEntryWebApplication`、`DriveEntryController`、`DriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、`application.properties` | 通过；未实现认证、缓存、上传或跨实例幂等 |
 | 项目测试走读与测试矩阵 | 第 15--16 节 | `DriveEntryHttpContractTest`、`SnapshotHttpFailureTest`、`DriveEntryRepositoryTest`、`DriveEntryMapperTest` | 通过；HTTP/MySQL 合同不等于浏览器端到端或并发压测 |
 | SQL/事务原理回扣项目 | 第 14、19、21 节 | `V1__create_drive_entries.sql`、主键查询、Service `@Transactional` | 通过；MVCC 双会话与手工 EXPLAIN 是用户待执行实验，不伪称已跑 |
 | 六类 Debug | Debug 1--6、第 22 节 | Bean 扫描、测试污染、异步边界、Mapper、重复键、重启检查 | 通过；每类均给出输入、预测、证据、修复和回归 |

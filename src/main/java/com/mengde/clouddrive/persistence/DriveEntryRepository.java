@@ -6,6 +6,7 @@ import com.mengde.clouddrive.domain.DriveEntry;
 import com.mengde.clouddrive.domain.EntryKind;
 import com.mengde.clouddrive.error.DuplicateEntryException;
 import com.mengde.clouddrive.error.EntryNotFoundException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,10 +27,11 @@ public class DriveEntryRepository {
     }
 
     public DriveEntry save(DriveEntry entry) {
-        if (mapper.findById(entry.id()).isPresent()) {
+        try {
+            mapper.insert(toRow(entry));
+        } catch (DuplicateKeyException exception) {
             throw new DuplicateEntryException(entry.id());
         }
-        mapper.insert(toRow(entry));
         return findById(entry.id());
     }
 

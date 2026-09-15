@@ -1,5 +1,7 @@
 package com.mengde.clouddrive.web;
 
+import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -36,14 +38,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         classes = DriveEntryWebApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "clouddrive.snapshot.path=target/day06-http-contract-snapshot.txt",
-                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+                "clouddrive.snapshot.path=target/day12-http-contract-snapshot.txt",
+                "spring.datasource.url=jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+                "spring.datasource.username=root",
+                "spring.datasource.password=123456"
         })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DriveEntryHttpContractTest {
 
     @Autowired
     private TestRestTemplate rest;
+
+    @Autowired
+    private DriveEntryRepository repository;
+
+    @BeforeEach
+    void clearDatabaseBeforeEveryHttpContract() {
+        repository.deleteAll();
+    }
 
     private HttpHeaders json() {
         HttpHeaders headers = new HttpHeaders();
@@ -52,7 +64,6 @@ class DriveEntryHttpContractTest {
     }
 
     @Test
-    @Order(1)
     void listOnFreshApplicationReturns200WithEmptyArray() {
         ResponseEntity<List> response = rest.getForEntity("/api/entries", List.class);
 
@@ -112,6 +123,21 @@ class DriveEntryHttpContractTest {
                 () -> assertNull(directory.get("parentId")),
                 () -> assertEquals("DOCUMENT", document.get("kind")),
                 () -> assertEquals(100, ((Number) document.get("byteSize")).intValue())
+        );
+    }
+
+    @Test
+    void createChildWithMissingParentReturns404AndDoesNotPersistChild() {
+        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
+                {"id": 45, "ownerId": 7, "parentId": 999,
+                 "displayName": "孤儿文档", "kind": "DOCUMENT", "byteSize": 100}
+                """, json()), Map.class);
+
+        ResponseEntity<List> after = rest.getForEntity("/api/entries", List.class);
+        assertAll(
+                () -> assertEquals(404, response.getStatusCode().value()),
+                () -> assertNotNull(after.getBody()),
+                () -> assertTrue(after.getBody().isEmpty())
         );
     }
 

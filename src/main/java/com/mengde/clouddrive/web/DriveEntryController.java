@@ -1,5 +1,6 @@
 package com.mengde.clouddrive.web;
 
+import com.mengde.clouddrive.application.DriveEntryApplicationService;
 import com.mengde.clouddrive.domain.DriveEntry;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,31 +23,31 @@ import java.util.List;
 @RequestMapping("/api/entries")
 public class DriveEntryController {
 
-    private final DriveEntryCatalog catalog;
+    private final DriveEntryApplicationService entryService;
 
-    public DriveEntryController(DriveEntryCatalog catalog) {
-        this.catalog = catalog;
+    public DriveEntryController(DriveEntryApplicationService entryService) {
+        this.entryService = entryService;
     }
 
     @GetMapping
     public List<EntryResponse> listAll() {
-        return catalog.listAll().stream().map(EntryResponse::from).toList();
+        return entryService.listAll().stream().map(EntryResponse::from).toList();
     }
 
     @PostMapping
     public ResponseEntity<EntryResponse> create(@Valid @RequestBody EntryCreateRequest request) {
-        DriveEntry created = catalog.create(request);
+        DriveEntry created = entryService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(EntryResponse.from(created));
     }
 
     @GetMapping("/{id}")
     public EntryResponse find(@PathVariable("id") long id) {
-        return EntryResponse.from(catalog.findRequired(id));
+        return EntryResponse.from(entryService.findRequired(id));
     }
 
     @PutMapping("/{id}/name")
     public ResponseEntity<Void> rename(@PathVariable("id") long id, @Valid @RequestBody RenameRequest request) {
-        catalog.rename(id, request.displayName());
+        entryService.rename(id, request.displayName());
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,7 @@
 package com.mengde.clouddrive.web;
 
+import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,11 +29,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(
         classes = {DriveEntryWebApplication.class, SnapshotHttpFailureTest.FailingSinkConfiguration.class},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration")
+        properties = {
+                "spring.datasource.url=jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+                "spring.datasource.username=root",
+                "spring.datasource.password=123456"
+        })
 class SnapshotHttpFailureTest {
 
     @Autowired
     private TestRestTemplate rest;
+
+    @Autowired
+    private DriveEntryRepository repository;
+
+    @BeforeEach
+    void clearDatabaseBeforeEveryHttpContract() {
+        repository.deleteAll();
+    }
 
     @TestConfiguration
     static class FailingSinkConfiguration {

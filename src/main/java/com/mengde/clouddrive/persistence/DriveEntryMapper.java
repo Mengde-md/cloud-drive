@@ -2,7 +2,6 @@ package com.mengde.clouddrive.persistence;
 
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -15,7 +14,6 @@ import java.util.Optional;
  * 不依赖 XML 映射文件；列名到属性名的映射由
  * {@code mybatis.configuration.map-underscore-to-camel-case} 自动完成。
  */
-@Mapper
 public interface DriveEntryMapper {
 
     @Insert("""

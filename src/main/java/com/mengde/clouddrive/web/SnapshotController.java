@@ -1,5 +1,6 @@
 package com.mengde.clouddrive.web;
 
+import com.mengde.clouddrive.application.DriveEntryApplicationService;
 import com.mengde.clouddrive.domain.DriveEntry;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,17 +17,17 @@ import java.util.List;
 @RequestMapping("/api/snapshots")
 public class SnapshotController {
 
-    private final DriveEntryCatalog catalog;
+    private final DriveEntryApplicationService entryService;
     private final SnapshotSink snapshotSink;
 
-    public SnapshotController(DriveEntryCatalog catalog, SnapshotSink snapshotSink) {
-        this.catalog = catalog;
+    public SnapshotController(DriveEntryApplicationService entryService, SnapshotSink snapshotSink) {
+        this.entryService = entryService;
         this.snapshotSink = snapshotSink;
     }
 
     @PostMapping
     public SnapshotResponse create() throws IOException {
-        List<DriveEntry> entries = catalog.listAll();
+        List<DriveEntry> entries = entryService.listAll();
         snapshotSink.save(entries);
         return new SnapshotResponse(entries.size());
     }

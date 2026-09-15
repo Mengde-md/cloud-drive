@@ -46,3 +46,17 @@ Day03 已经能在当前 JVM 中以顺序列表展示条目、以 HashMap 按 ID
 ## 明日唯一输入
 
 Day05 的唯一输入是本日已验证的文件快照及所有此前回归测试。Day05 只围绕并发与线程池的竞争、幂等和容量控制扩展；不得提前引入框架级并发设施。
+
+## 教材自审（Day02/Day05 对照）
+
+| Day02/Day05 质量项 | Day04 教材位置 | 已重新读取的真实证据 | 结论 |
+|---|---|---|---|
+| 前日衔接与真实问题 | 第 0、1、2 节 | Day03 的内存列表/索引在 JVM 退出后不能恢复 | 通过 |
+| 项目生产源码走读 | 第 3--5 节 | `EntrySnapshotStore.java`、`AbstractDriveEntry.java`、`SnapshotFormatException.java` | 通过 |
+| 项目测试走读与测试矩阵 | 第 3、6 节 | `EntrySnapshotStoreTest.java`、`DirectoryEntryTest.java`、`DocumentEntryTest.java` | 通过 |
+| IO/JVM 原理回扣项目 | 第 2、4、5 节 | 堆内对象与落盘字节的边界、同目录临时文件、恢复时重走构造约束 | 通过 |
+| 三类以上 Debug | 第 7 节 Debug 1--Debug 4 | 缺失/损坏区别、半写替换、编码歧义、绕过构造器 | 通过 |
+| 独立复刻、阶段题、面试 | 第 8 节 | NoteSnapshotStore、算法编码题、快照版本 SQL、NIO Java 题和项目表达 | 通过 |
+| 运行证据与范围边界 | Final 验收记录、第 9 节 | Day04 历史 28 项回归；本次仅重做教材与 Final，未改 Day04 代码 | 通过 |
+
+**审计结论**：Day04 的文件快照工程能力与历史提交不变；教材已补齐真实源码/测试走读和可复刻闭环。人工学习门仍由用户完成，AI 不得代填。

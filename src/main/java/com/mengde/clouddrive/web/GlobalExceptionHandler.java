@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.io.IOException;
+import com.mengde.clouddrive.auth.InvalidCredentialsException;
+import com.mengde.clouddrive.auth.UsernameAlreadyExistsException;
 
 /**
  * 全局异常到 HTTP 状态码的映射，是本日“4xx/5xx 真实响应”的落点：
@@ -19,6 +21,12 @@ import java.io.IOException;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(UsernameAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleUsernameExists(UsernameAlreadyExistsException exception) { return respond(HttpStatus.CONFLICT, exception.getMessage()); }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException exception) { return respond(HttpStatus.UNAUTHORIZED, exception.getMessage()); }
 
     @ExceptionHandler(EntryNotFoundException.class)
     public ResponseEntity<ApiError> handleEntryNotFound(EntryNotFoundException exception) {

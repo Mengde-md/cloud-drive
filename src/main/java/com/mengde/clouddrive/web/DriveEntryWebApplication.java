@@ -12,7 +12,7 @@ import org.mybatis.spring.annotation.MapperScan;
  * 工程基线的命令行入口，本类是 Web 入口，两者各自独立可运行。</p>
  */
 @SpringBootApplication(scanBasePackages = "com.mengde.clouddrive")
-@MapperScan("com.mengde.clouddrive.persistence")
+@MapperScan({"com.mengde.clouddrive.persistence", "com.mengde.clouddrive.auth"})
 public class DriveEntryWebApplication {
 
     public static void main(String[] args) {

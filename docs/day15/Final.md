@@ -22,7 +22,7 @@ Flyway V2 增加 `user_account` 与 username 唯一约束。`AuthService` 用 BC
 
 - `mvn clean test`：**83 tests / 0 failures / 0 errors / 0 skipped / BUILD SUCCESS**。
 - `AuthHttpContractTest`：注册→登录→Bearer `/me`、缺失/篡改 token 401、重复 username 409；错误密码验证为服务层 `InvalidCredentialsException`。
-- 教材自审（Day02/Day05）：从 Day14 的真实问题进入，按问题→责任边界→源码→测试→Debug→复刻→面试展开；不把 JWT Base64 误称加密，不把 token 无状态误称无需数据库。
+- 教材自审（Day02/Day05）：从 Day14 的真实问题进入，按问题→责任边界→项目源码走读→项目测试走读→Debug→复刻→面试展开；重新读取 `AuthService`、`JwtTokenService`、`SecurityConfiguration`、`AuthController`、`UserAccountMapper` 及 `AuthHttpContractTest`。不把 JWT Base64 误称加密，不把 token 无状态误称无需数据库。
 
 ## 独立复刻任务
 

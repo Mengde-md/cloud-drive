@@ -30,7 +30,8 @@
 
 - 复盘日无生产/测试业务代码增量；提交只包含 `docs/day13/Final.md`。
 - 教材包含前日衔接、真实问题、生产源码走读、项目测试走读、六个 Debug、独立复刻、算法/SQL/Java 题、面试回答和全文末尾的 Day14 输入。
-- 最终运行门以 `verify_day.ps1 -DayNN 13` 的真实输出为准；运行前不得称工程交付完成。
+- 教材复审：重新打开 `SnapshotConfiguration`、`EntryCreateRequest`、`DriveEntryRepository`、`SnapshotTaskExecutor`、`AbstractDriveEntry`、`DriveEntryApplicationService` 以及四类对应测试；教材为 620 行、23,236 字符、13 个 Java 片段、10 个 Debug。复审结论为通过；不把抽象父类、函数式接口或 HTTP 测试作过度模式宣称。
+- 运行证据：固定 JDK 17/Maven 3.9.10/`C:\Environment\m2repo` 的 `mvn clean test` 得到 77/0/0、`BUILD SUCCESS`；随后 `verify_day.ps1 -DayNN 13` 得到 12/12 PASS。验证中发现占位符扫描曾把真实方法名 `toDomain` 误匹配为 TODO，已将脚本修正为完整单词匹配后复验；未修改任何业务代码。
 
 ## 独立复刻任务
 
@@ -54,6 +55,7 @@
 | 项目测试走读/测试矩阵 | 第 6、9、11、15 节 | `SnapshotHttpFailureTest`、领域 identity/多态测试、并发失败测试、HTTP 合同测试 | 通过；不把行为结果测试夸大为代理实现类型证明 |
 | Debug 与反例 | Debug 1–6 | Bean 替换、创建分支、future 清理、identity、事务代理、Controller 边界 | 通过；均明确不新增业务代码的修复原则 |
 | 独立复刻、阶段题与面试 | 第 18–19、17 节 | 临时执行器练习、LC146/207、SQL/Java 题、项目化回答 | 通过；学习者需亲自提交解题与错因记录 |
+| 运行证据与静态脚本误判 | Final 验收记录、教材第 8、22 节 | 77 项 Maven 回归、`verify_day.ps1`、`toDomain` 实际源码 | 通过；修复验证脚本词边界，不以删改真实源码回避误判 |
 
 ## 明日唯一输入
 

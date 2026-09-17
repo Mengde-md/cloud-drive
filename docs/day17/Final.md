@@ -108,4 +108,3 @@ Day17 新增 HTTP 覆盖：
 ## 明日唯一输入
 
 Day18 的唯一输入是 Day17 已完成的完整对象上传：metadata 已有 storageKey、contentMd5，普通上传能补偿失败，且 owner/目录/配额边界未被破坏。Day18 才增量实现分片与续传。
-

@@ -30,6 +30,13 @@ public interface DriveEntryMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insertGenerated(DriveEntryInsertRow row);
 
+    @Insert("""
+            INSERT INTO drive_entries (owner_id, parent_id, display_name, kind, byte_size, storage_key, content_md5)
+            VALUES (#{ownerId}, #{parentId}, #{displayName}, 'DOCUMENT', #{byteSize}, #{storageKey}, #{contentMd5})
+            """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertStoredDocument(StoredDocumentRow row);
+
     @Select("SELECT id, owner_id, parent_id, display_name, kind, byte_size FROM drive_entries WHERE id = #{id}")
     Optional<DriveEntryRow> findById(long id);
 
@@ -44,6 +51,14 @@ public interface DriveEntryMapper {
 
     @Select("SELECT COALESCE(SUM(COALESCE(byte_size, 0)), 0) FROM drive_entries WHERE owner_id = #{ownerId}")
     long usedBytesByOwner(long ownerId);
+
+    @Select("""
+            SELECT id, owner_id AS ownerId, parent_id AS parentId, display_name AS displayName,
+                   byte_size AS byteSize, storage_key AS storageKey, content_md5 AS contentMd5
+            FROM drive_entries WHERE owner_id = #{ownerId} AND content_md5 = #{md5}
+            AND storage_key IS NOT NULL ORDER BY id LIMIT 1
+            """)
+    Optional<StoredDocumentRow> findStoredDocumentByOwnerAndMd5(@Param("ownerId") long ownerId, @Param("md5") String md5);
 
     @Select("SELECT COUNT(*) FROM drive_entries WHERE owner_id = #{ownerId} AND parent_id = #{parentId}")
     int countChildrenByOwnerAndParent(@Param("ownerId") long ownerId, @Param("parentId") long parentId);

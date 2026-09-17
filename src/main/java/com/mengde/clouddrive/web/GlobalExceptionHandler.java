@@ -5,6 +5,7 @@ import com.mengde.clouddrive.error.EntryNotFoundException;
 import com.mengde.clouddrive.error.DuplicateEntryNameException;
 import com.mengde.clouddrive.error.DirectoryNotEmptyException;
 import com.mengde.clouddrive.error.QuotaExceededException;
+import com.mengde.clouddrive.error.InstantUploadCandidateNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -33,6 +34,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntryNotFoundException.class)
     public ResponseEntity<ApiError> handleEntryNotFound(EntryNotFoundException exception) {
+        return respond(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(InstantUploadCandidateNotFoundException.class)
+    public ResponseEntity<ApiError> handleInstantCandidateMissing(InstantUploadCandidateNotFoundException exception) {
         return respond(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 

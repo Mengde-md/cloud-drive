@@ -7,6 +7,7 @@ import com.mengde.clouddrive.domain.EntryKind;
 import com.mengde.clouddrive.error.DuplicateEntryException;
 import com.mengde.clouddrive.error.EntryNotFoundException;
 import com.mengde.clouddrive.error.DuplicateEntryNameException;
+import com.mengde.clouddrive.error.InstantUploadCandidateNotFoundException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -79,6 +80,20 @@ public class DriveEntryRepository {
 
     public boolean hasChildren(long ownerId, long parentId) {
         return mapper.countChildrenByOwnerAndParent(ownerId, parentId) > 0;
+    }
+
+    public StoredDocumentRow saveStoredDocument(long ownerId, Long parentId, String displayName, long byteSize, String storageKey, String md5) {
+        StoredDocumentRow row = new StoredDocumentRow();
+        row.setOwnerId(ownerId); row.setParentId(parentId); row.setDisplayName(displayName.trim());
+        row.setByteSize(byteSize); row.setStorageKey(storageKey); row.setContentMd5(md5);
+        try { mapper.insertStoredDocument(row); }
+        catch (DuplicateKeyException exception) { throw new DuplicateEntryNameException(displayName); }
+        return row;
+    }
+
+    public StoredDocumentRow findReusableStoredDocument(long ownerId, String md5) {
+        return mapper.findStoredDocumentByOwnerAndMd5(ownerId, md5)
+                .orElseThrow(InstantUploadCandidateNotFoundException::new);
     }
 
     public void rename(long id, String displayName) {

@@ -27,7 +27,7 @@
 - 实现提交：`a7331e3 feat(day16): add owner-scoped drive metadata and quota`。
 - `mvn clean test` 的 Surefire XML 汇总：**73 tests / 0 failures / 0 errors**；其中 Day16 `DriveEntryHttpContractTest` 为 7 个真实随机端口 HTTP 场景，覆盖匿名 401、owner 来源、跨用户不可见、父目录隔离、同级重名、配额/非空目录和跨用户改删。
 - `git diff --check` 为 0；实现提交后工作区干净。
-- 教材自审（Day02/Day05）：已重新读取 Day15 `SecurityConfiguration`/`AuthenticatedUser`，Day16 `OwnedDriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、V3 migration、`DriveEntryController` 与 `DriveEntryHttpContractTest`。教材依次记录前日衔接、真实问题、生产源码走读、项目测试走读/测试矩阵、Debug、算法/SQL/Java 题、面试与独立复刻；不把 73 项工程回归写成用户已学会。
+- 教材自审（Day02/Day05）：**项目源码**已重新读取 Day15 `SecurityConfiguration`/`AuthenticatedUser`，Day16 `OwnedDriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、V3 migration、`DriveEntryController`；项目测试已重新读取 `DriveEntryHttpContractTest` 与 `RequestValidationContractTest`。教材依次记录前日衔接、真实问题、生产源码走读、项目测试走读/测试矩阵、8 个 Debug、算法/SQL/Java 题、面试与独立复刻；不把 73 项工程回归写成用户已学会。
 
 ## 独立复刻任务
 

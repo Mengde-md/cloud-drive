@@ -45,7 +45,7 @@ public class SecurityConfiguration {
     @Bean JwtDecoder jwtDecoder(SecretKey key) { NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build(); decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("cloud-drive-learning")); return decoder; }
     @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, JsonAuthFailureHandler failures) throws Exception {
         return http.csrf(csrf -> csrf.disable()).httpBasic(basic -> basic.disable()).formLogin(form -> form.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(a -> a.requestMatchers("/api/auth/register", "/api/auth/login").permitAll().requestMatchers("/api/auth/me", "/api/entries", "/api/entries/**", "/api/files", "/api/files/**").authenticated().anyRequest().permitAll())
+                .authorizeHttpRequests(a -> a.requestMatchers("/api/auth/register", "/api/auth/login").permitAll().requestMatchers("/api/auth/me", "/api/entries", "/api/entries/**", "/api/files", "/api/files/**", "/api/upload-sessions", "/api/upload-sessions/**").authenticated().anyRequest().permitAll())
                 .exceptionHandling(e -> e.authenticationEntryPoint(failures).accessDeniedHandler(failures))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class).build();
     }

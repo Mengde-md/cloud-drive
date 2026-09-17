@@ -6,6 +6,7 @@ import com.mengde.clouddrive.error.DuplicateEntryNameException;
 import com.mengde.clouddrive.error.DirectoryNotEmptyException;
 import com.mengde.clouddrive.error.QuotaExceededException;
 import com.mengde.clouddrive.error.InstantUploadCandidateNotFoundException;
+import com.mengde.clouddrive.error.UploadSessionIncompleteException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -47,7 +48,7 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.CONFLICT, exception.getMessage());
     }
 
-    @ExceptionHandler({DuplicateEntryNameException.class, DirectoryNotEmptyException.class, QuotaExceededException.class})
+    @ExceptionHandler({DuplicateEntryNameException.class, DirectoryNotEmptyException.class, QuotaExceededException.class, UploadSessionIncompleteException.class})
     public ResponseEntity<ApiError> handleEntryConflict(RuntimeException exception) {
         return respond(HttpStatus.CONFLICT, exception.getMessage());
     }

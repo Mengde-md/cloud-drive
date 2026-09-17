@@ -45,6 +45,28 @@ public class LocalObjectStorage implements ObjectStorage {
     }
 
     @Override
+    public InputStream open(String storageKey, long start, long length) throws IOException {
+        Path target = root.resolve(storageKey).normalize();
+        if (!target.startsWith(root) || start < 0 || length < 0) throw new IOException("invalid object range");
+        InputStream input = Files.newInputStream(target);
+        try { input.skipNBytes(start); }
+        catch (IOException failure) { input.close(); throw failure; }
+        return new java.io.BufferedInputStream(input) {
+            private long remaining = length;
+            @Override public int read(byte[] bytes, int offset, int count) throws IOException {
+                if (remaining == 0) return -1;
+                int read = super.read(bytes, offset, (int) Math.min(count, remaining));
+                if (read > 0) remaining -= read;
+                return read;
+            }
+            @Override public int read() throws IOException {
+                if (remaining == 0) return -1;
+                int read = super.read(); if (read != -1) remaining--; return read;
+            }
+        };
+    }
+
+    @Override
     public void delete(String storageKey) throws IOException {
         Path target = root.resolve(storageKey).normalize();
         if (!target.startsWith(root)) throw new IOException("invalid storage key");

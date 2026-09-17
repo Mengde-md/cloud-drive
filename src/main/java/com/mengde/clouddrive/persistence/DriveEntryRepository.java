@@ -96,6 +96,11 @@ public class DriveEntryRepository {
                 .orElseThrow(InstantUploadCandidateNotFoundException::new);
     }
 
+    public StoredDocumentRow findStoredDocumentByOwnerAndId(long ownerId, long id) {
+        return mapper.findStoredDocumentByOwnerAndId(ownerId, id)
+                .orElseThrow(() -> new EntryNotFoundException(id));
+    }
+
     public void rename(long id, String displayName) {
         int updated = mapper.updateDisplayName(id, displayName);
         if (updated == 0) {

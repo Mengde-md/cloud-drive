@@ -60,6 +60,14 @@ public interface DriveEntryMapper {
             """)
     Optional<StoredDocumentRow> findStoredDocumentByOwnerAndMd5(@Param("ownerId") long ownerId, @Param("md5") String md5);
 
+    @Select("""
+            SELECT id, owner_id AS ownerId, parent_id AS parentId, display_name AS displayName,
+                   byte_size AS byteSize, storage_key AS storageKey, content_md5 AS contentMd5
+            FROM drive_entries WHERE owner_id = #{ownerId} AND id = #{id}
+            AND storage_key IS NOT NULL
+            """)
+    Optional<StoredDocumentRow> findStoredDocumentByOwnerAndId(@Param("ownerId") long ownerId, @Param("id") long id);
+
     @Select("SELECT COUNT(*) FROM drive_entries WHERE owner_id = #{ownerId} AND parent_id = #{parentId}")
     int countChildrenByOwnerAndParent(@Param("ownerId") long ownerId, @Param("parentId") long parentId);
 

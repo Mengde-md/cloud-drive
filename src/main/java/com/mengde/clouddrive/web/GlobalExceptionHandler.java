@@ -18,6 +18,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.io.IOException;
 import com.mengde.clouddrive.auth.InvalidCredentialsException;
 import com.mengde.clouddrive.auth.UsernameAlreadyExistsException;
+import com.mengde.clouddrive.share.ShareAccessException;
 
 /**
  * 全局异常到 HTTP 状态码的映射，是本日“4xx/5xx 真实响应”的落点：
@@ -42,6 +43,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleInstantCandidateMissing(InstantUploadCandidateNotFoundException exception) {
         return respond(HttpStatus.NOT_FOUND, exception.getMessage());
     }
+    @ExceptionHandler(ShareAccessException.class)
+    public ResponseEntity<ApiError> handleShareAccess(ShareAccessException exception) { return respond(HttpStatus.NOT_FOUND, exception.getMessage()); }
 
     @ExceptionHandler(DuplicateEntryException.class)
     public ResponseEntity<ApiError> handleDuplicateEntry(DuplicateEntryException exception) {

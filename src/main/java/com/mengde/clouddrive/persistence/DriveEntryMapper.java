@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Options;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,17 +23,42 @@ public interface DriveEntryMapper {
             """)
     int insert(DriveEntryRow row);
 
+    @Insert("""
+            INSERT INTO drive_entries (owner_id, parent_id, display_name, kind, byte_size)
+            VALUES (#{ownerId}, #{parentId}, #{displayName}, #{kind}, #{byteSize})
+            """)
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insertGenerated(DriveEntryInsertRow row);
+
     @Select("SELECT id, owner_id, parent_id, display_name, kind, byte_size FROM drive_entries WHERE id = #{id}")
     Optional<DriveEntryRow> findById(long id);
 
     @Select("SELECT id, owner_id, parent_id, display_name, kind, byte_size FROM drive_entries ORDER BY id")
     List<DriveEntryRow> findAll();
 
+    @Select("SELECT id, owner_id, parent_id, display_name, kind, byte_size FROM drive_entries WHERE id = #{id} AND owner_id = #{ownerId}")
+    Optional<DriveEntryRow> findByOwnerAndId(@Param("ownerId") long ownerId, @Param("id") long id);
+
+    @Select("SELECT id, owner_id, parent_id, display_name, kind, byte_size FROM drive_entries WHERE owner_id = #{ownerId} ORDER BY parent_scope_id, id")
+    List<DriveEntryRow> findAllByOwner(long ownerId);
+
+    @Select("SELECT COALESCE(SUM(COALESCE(byte_size, 0)), 0) FROM drive_entries WHERE owner_id = #{ownerId}")
+    long usedBytesByOwner(long ownerId);
+
+    @Select("SELECT COUNT(*) FROM drive_entries WHERE owner_id = #{ownerId} AND parent_id = #{parentId}")
+    int countChildrenByOwnerAndParent(@Param("ownerId") long ownerId, @Param("parentId") long parentId);
+
     @Update("UPDATE drive_entries SET display_name = #{displayName} WHERE id = #{id}")
     int updateDisplayName(@Param("id") long id, @Param("displayName") String displayName);
 
+    @Update("UPDATE drive_entries SET display_name = #{displayName} WHERE id = #{id} AND owner_id = #{ownerId}")
+    int updateDisplayNameByOwner(@Param("ownerId") long ownerId, @Param("id") long id, @Param("displayName") String displayName);
+
     @Delete("DELETE FROM drive_entries WHERE id = #{id}")
     int deleteById(long id);
+
+    @Delete("DELETE FROM drive_entries WHERE id = #{id} AND owner_id = #{ownerId}")
+    int deleteByOwnerAndId(@Param("ownerId") long ownerId, @Param("id") long id);
 
     @Delete("DELETE FROM drive_entries")
     int deleteAll();

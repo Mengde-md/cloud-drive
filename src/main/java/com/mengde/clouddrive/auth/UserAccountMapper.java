@@ -14,5 +14,7 @@ public interface UserAccountMapper {
     int insert(UserAccountRow row);
     @Select("SELECT id, username, password_hash AS passwordHash, role FROM user_account WHERE username = #{username}")
     Optional<UserAccountRow> findByUsername(String username);
+    @Select("SELECT quota_bytes FROM user_account WHERE id = #{id} FOR UPDATE")
+    Optional<Long> lockQuotaById(long id);
     @Delete("DELETE FROM user_account") int deleteAll();
 }

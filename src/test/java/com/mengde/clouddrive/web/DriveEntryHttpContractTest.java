@@ -1,311 +1,188 @@
 package com.mengde.clouddrive.web;
 
+import com.mengde.clouddrive.auth.AuthController;
+import com.mengde.clouddrive.auth.UserAccountMapper;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Day06 HTTP 契约测试：真实启动内嵌 Tomcat（随机端口），
- * 用 TestRestTemplate 发真实 HTTP 请求，逐一验证 2xx/4xx 响应。
- * 快照成功路径（200）与 5xx 路径分别在 SnapshotHttpFailureTest 中覆盖。
- *
- * <p>所有方法共享同一个应用上下文（同一个内存目录），因此“空列表”用
- * {@code @Order(1)} 固定最先执行，其余方法只依赖自己创建的条目，
- * 不对全局列表大小做断言。</p>
+ * Day16 HTTP contract: the caller never supplies ownerId or entry id. The
+ * token supplies ownership and MySQL supplies the generated id.
  */
 @SpringBootTest(
         classes = DriveEntryWebApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "clouddrive.snapshot.path=target/day12-http-contract-snapshot.txt",
                 "spring.datasource.url=jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
                 "spring.datasource.username=root",
                 "spring.datasource.password=123456"
         })
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DriveEntryHttpContractTest {
 
-    @Autowired
-    private TestRestTemplate rest;
+    @Autowired private TestRestTemplate rest;
+    @Autowired private DriveEntryRepository entries;
+    @Autowired private UserAccountMapper users;
 
-    @Autowired
-    private DriveEntryRepository repository;
-
-    @BeforeEach
-    void clearDatabaseBeforeEveryHttpContract() {
-        repository.deleteAll();
+    @AfterEach
+    void clearPersistentFixtures() {
+        entries.deleteAll();
+        users.deleteAll();
     }
 
-    private HttpHeaders json() {
+    @Test
+    void anonymousEntryRequestGets401BeforeController() {
+        assertEquals(HttpStatus.UNAUTHORIZED, rest.getForEntity("/api/entries", ApiError.class).getStatusCode());
+    }
+
+    @Test
+    void tokenIdentityOwnsGeneratedEntryAndOwnerCannotBeSpoofedInJson() {
+        Session alice = session("alice" + System.nanoTime());
+        ResponseEntity<Map> created = post(alice, """
+                {"displayName":"我的根目录","kind":"DIRECTORY"}
+                """);
+
+        assertAll(
+                () -> assertEquals(HttpStatus.CREATED, created.getStatusCode()),
+                () -> assertNotNull(created.getBody()),
+                () -> assertTrue(((Number) created.getBody().get("id")).longValue() > 0),
+                () -> assertEquals(alice.id(), ((Number) created.getBody().get("ownerId")).longValue()),
+                () -> assertFalse(created.getBody().containsKey("requestedOwnerId"))
+        );
+    }
+
+    @Test
+    void listAndDetailAreOwnerScopedAndDoNotRevealAnotherUsersEntry() {
+        Session alice = session("alice" + System.nanoTime());
+        Session bob = session("bob" + System.nanoTime());
+        long id = entryId(post(alice, """
+                {"displayName":"Alice only","kind":"DOCUMENT","byteSize":12}
+                """));
+
+        ResponseEntity<List> bobList = rest.exchange("/api/entries", HttpMethod.GET, new HttpEntity<>(bob.headers()), List.class);
+        ResponseEntity<ApiError> bobDetail = rest.exchange("/api/entries/" + id, HttpMethod.GET, new HttpEntity<>(bob.headers()), ApiError.class);
+
+        assertAll(
+                () -> assertEquals(HttpStatus.OK, bobList.getStatusCode()),
+                () -> assertTrue(bobList.getBody().isEmpty()),
+                () -> assertEquals(HttpStatus.NOT_FOUND, bobDetail.getStatusCode()),
+                () -> assertEquals(404, bobDetail.getBody().status())
+        );
+    }
+
+    @Test
+    void parentMustBeCallersDirectoryAndCannotCrossOwnerBoundary() {
+        Session alice = session("alice" + System.nanoTime());
+        Session bob = session("bob" + System.nanoTime());
+        long aliceDirectory = entryId(post(alice, """
+                {"displayName":"Alice folder","kind":"DIRECTORY"}
+                """));
+
+        ResponseEntity<ApiError> response = post(bob, """
+                {"parentId":%d,"displayName":"illegal child","kind":"DOCUMENT","byteSize":3}
+                """.formatted(aliceDirectory), ApiError.class);
+
+        assertAll(
+                () -> assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode()),
+                () -> assertEquals(404, response.getBody().status()),
+                () -> assertTrue(rest.exchange("/api/entries", HttpMethod.GET, new HttpEntity<>(bob.headers()), List.class).getBody().isEmpty())
+        );
+    }
+
+    @Test
+    void databaseRejectsSameNameInSameDirectoryButAllowsSameNameInDifferentDirectories() {
+        Session alice = session("alice" + System.nanoTime());
+        long firstDirectory = entryId(post(alice, "{\"displayName\":\"one\",\"kind\":\"DIRECTORY\"}"));
+        long secondDirectory = entryId(post(alice, "{\"displayName\":\"two\",\"kind\":\"DIRECTORY\"}"));
+        assertEquals(HttpStatus.CREATED, post(alice, "{\"parentId\":%d,\"displayName\":\"readme\",\"kind\":\"DOCUMENT\",\"byteSize\":1}".formatted(firstDirectory)).getStatusCode());
+
+        ResponseEntity<ApiError> duplicate = post(alice, "{\"parentId\":%d,\"displayName\":\"readme\",\"kind\":\"DOCUMENT\",\"byteSize\":1}".formatted(firstDirectory), ApiError.class);
+        ResponseEntity<Map> sibling = post(alice, "{\"parentId\":%d,\"displayName\":\"readme\",\"kind\":\"DOCUMENT\",\"byteSize\":1}".formatted(secondDirectory));
+
+        assertAll(
+                () -> assertEquals(HttpStatus.CONFLICT, duplicate.getStatusCode()),
+                () -> assertEquals(409, duplicate.getBody().status()),
+                () -> assertEquals(HttpStatus.CREATED, sibling.getStatusCode())
+        );
+    }
+
+    @Test
+    void quotaAndNonEmptyDirectoryFailuresLeaveConsistentMetadata() {
+        Session alice = session("alice" + System.nanoTime());
+        ResponseEntity<ApiError> tooLarge = post(alice, """
+                {"displayName":"too-large","kind":"DOCUMENT","byteSize":1073741825}
+                """, ApiError.class);
+        long directory = entryId(post(alice, "{\"displayName\":\"parent\",\"kind\":\"DIRECTORY\"}"));
+        long child = entryId(post(alice, "{\"parentId\":%d,\"displayName\":\"child\",\"kind\":\"DOCUMENT\",\"byteSize\":1}".formatted(directory)));
+
+        ResponseEntity<ApiError> blockedDelete = rest.exchange("/api/entries/" + directory, HttpMethod.DELETE, new HttpEntity<>(alice.headers()), ApiError.class);
+        ResponseEntity<Void> deleteChild = rest.exchange("/api/entries/" + child, HttpMethod.DELETE, new HttpEntity<>(alice.headers()), Void.class);
+        ResponseEntity<Void> deleteDirectory = rest.exchange("/api/entries/" + directory, HttpMethod.DELETE, new HttpEntity<>(alice.headers()), Void.class);
+
+        assertAll(
+                () -> assertEquals(HttpStatus.CONFLICT, tooLarge.getStatusCode()),
+                () -> assertEquals(HttpStatus.CONFLICT, blockedDelete.getStatusCode()),
+                () -> assertEquals(HttpStatus.NO_CONTENT, deleteChild.getStatusCode()),
+                () -> assertEquals(HttpStatus.NO_CONTENT, deleteDirectory.getStatusCode())
+        );
+    }
+
+    @Test
+    void renameAndDeleteAreAlsoOwnerScoped() {
+        Session alice = session("alice" + System.nanoTime());
+        Session bob = session("bob" + System.nanoTime());
+        long id = entryId(post(alice, "{\"displayName\":\"before\",\"kind\":\"DIRECTORY\"}"));
+
+        ResponseEntity<ApiError> rename = rest.exchange("/api/entries/" + id + "/name", HttpMethod.PUT, new HttpEntity<>("{\"displayName\":\"stolen\"}", bob.headers()), ApiError.class);
+        ResponseEntity<ApiError> delete = rest.exchange("/api/entries/" + id, HttpMethod.DELETE, new HttpEntity<>(bob.headers()), ApiError.class);
+        ResponseEntity<Map> ownerRead = rest.exchange("/api/entries/" + id, HttpMethod.GET, new HttpEntity<>(alice.headers()), Map.class);
+
+        assertAll(
+                () -> assertEquals(HttpStatus.NOT_FOUND, rename.getStatusCode()),
+                () -> assertEquals(HttpStatus.NOT_FOUND, delete.getStatusCode()),
+                () -> assertEquals("before", ownerRead.getBody().get("displayName"))
+        );
+    }
+
+    private Session session(String username) {
+        ResponseEntity<AuthController.UserResponse> registered = rest.postForEntity("/api/auth/register", new AuthController.Credentials(username, "correct-password"), AuthController.UserResponse.class);
+        ResponseEntity<AuthController.TokenResponse> login = rest.postForEntity("/api/auth/login", new AuthController.Credentials(username, "correct-password"), AuthController.TokenResponse.class);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        return headers;
+        headers.setBearerAuth(login.getBody().accessToken());
+        return new Session(registered.getBody().id(), headers);
     }
 
-    @Test
-    void listOnFreshApplicationReturns200WithEmptyArray() {
-        ResponseEntity<List> response = rest.getForEntity("/api/entries", List.class);
-
-        assertAll(
-                () -> assertEquals(200, response.getStatusCode().value()),
-                () -> assertNotNull(response.getBody()),
-                () -> assertTrue(response.getBody().isEmpty())
-        );
+    private ResponseEntity<Map> post(Session session, String body) {
+        return post(session, body, Map.class);
     }
 
-    @Test
-    void createDocumentReturns201AndEchoesEntry() {
-        String body = """
-                {"id": 31, "ownerId": 7, "parentId": null,
-                 "displayName": "HTTP 契约笔记", "kind": "DOCUMENT", "byteSize": 2048}
-                """;
-        ResponseEntity<Map> response =
-                rest.postForEntity("/api/entries", new HttpEntity<>(body, json()), Map.class);
-
-        assertAll(
-                () -> assertEquals(201, response.getStatusCode().value()),
-                () -> assertEquals(31, ((Number) response.getBody().get("id")).intValue()),
-                () -> assertEquals(7, ((Number) response.getBody().get("ownerId")).intValue()),
-                () -> assertNull(response.getBody().get("parentId")),
-                () -> assertEquals("HTTP 契约笔记", response.getBody().get("displayName")),
-                () -> assertEquals("DOCUMENT", response.getBody().get("kind")),
-                () -> assertEquals(2048, ((Number) response.getBody().get("byteSize")).intValue())
-        );
+    private <T> ResponseEntity<T> post(Session session, String body, Class<T> responseType) {
+        return rest.postForEntity("/api/entries", new HttpEntity<>(body, session.headers()), responseType);
     }
 
-    @Test
-    void createDirectoryThenListReturns200WithBothKinds() {
-        rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 41, "ownerId": 7, "parentId": null,
-                 "displayName": "Day06 目录", "kind": "DIRECTORY"}
-                """, json()), Map.class);
-        rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 42, "ownerId": 7, "parentId": 41,
-                 "displayName": "Day06 文档", "kind": "DOCUMENT", "byteSize": 100}
-                """, json()), Map.class);
-
-        ResponseEntity<List> response = rest.getForEntity("/api/entries", List.class);
-
-        assertEquals(200, response.getStatusCode().value());
-        List<?> entries = response.getBody();
-        Map<?, ?> directory = entries.stream()
-                .map(entry -> (Map<?, ?>) entry)
-                .filter(entry -> Integer.valueOf(41).equals(((Number) entry.get("id")).intValue()))
-                .findFirst().orElseThrow();
-        Map<?, ?> document = entries.stream()
-                .map(entry -> (Map<?, ?>) entry)
-                .filter(entry -> Integer.valueOf(42).equals(((Number) entry.get("id")).intValue()))
-                .findFirst().orElseThrow();
-        assertAll(
-                () -> assertEquals("DIRECTORY", directory.get("kind")),
-                () -> assertNull(directory.get("byteSize")),
-                () -> assertNull(directory.get("parentId")),
-                () -> assertEquals("DOCUMENT", document.get("kind")),
-                () -> assertEquals(100, ((Number) document.get("byteSize")).intValue())
-        );
+    private long entryId(ResponseEntity<Map> response) {
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        return ((Number) response.getBody().get("id")).longValue();
     }
 
-    @Test
-    void createChildWithMissingParentReturns404AndDoesNotPersistChild() {
-        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 45, "ownerId": 7, "parentId": 999,
-                 "displayName": "孤儿文档", "kind": "DOCUMENT", "byteSize": 100}
-                """, json()), Map.class);
-
-        ResponseEntity<List> after = rest.getForEntity("/api/entries", List.class);
-        assertAll(
-                () -> assertEquals(404, response.getStatusCode().value()),
-                () -> assertNotNull(after.getBody()),
-                () -> assertTrue(after.getBody().isEmpty())
-        );
-    }
-
-    @Test
-    void findExistingEntryReturns200() {
-        rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 51, "ownerId": 7, "parentId": null,
-                 "displayName": "详情查询目标", "kind": "DOCUMENT", "byteSize": 1}
-                """, json()), Map.class);
-
-        ResponseEntity<Map> response = rest.getForEntity("/api/entries/51", Map.class);
-
-        assertAll(
-                () -> assertEquals(200, response.getStatusCode().value()),
-                () -> assertEquals("详情查询目标", response.getBody().get("displayName"))
-        );
-    }
-
-    @Test
-    void findMissingEntryReturns404WithErrorBody() {
-        ResponseEntity<Map> response = rest.getForEntity("/api/entries/9999", Map.class);
-
-        assertAll(
-                () -> assertEquals(404, response.getStatusCode().value()),
-                () -> assertEquals(404, ((Number) response.getBody().get("status")).intValue()),
-                () -> assertEquals("Not Found", response.getBody().get("error")),
-                () -> assertTrue(String.valueOf(response.getBody().get("message")).contains("9999"))
-        );
-    }
-
-    @Test
-    void createDuplicateIdReturns409() {
-        String body = """
-                {"id": 61, "ownerId": 7, "parentId": null,
-                 "displayName": "第一次", "kind": "DIRECTORY"}
-                """;
-        rest.postForEntity("/api/entries", new HttpEntity<>(body, json()), Map.class);
-
-        ResponseEntity<Map> response =
-                rest.postForEntity("/api/entries", new HttpEntity<>(body, json()), Map.class);
-
-        assertAll(
-                () -> assertEquals(409, response.getStatusCode().value()),
-                () -> assertEquals("Conflict", response.getBody().get("error"))
-        );
-    }
-
-    @Test
-    void createBlankDisplayNameReturns400() {
-        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 71, "ownerId": 7, "parentId": null,
-                 "displayName": "   ", "kind": "DIRECTORY"}
-                """, json()), Map.class);
-
-        assertAll(
-                () -> assertEquals(400, response.getStatusCode().value()),
-                () -> assertEquals("Bad Request", response.getBody().get("error"))
-        );
-    }
-
-    @Test
-    void createUnknownKindReturns400() {
-        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 72, "ownerId": 7, "parentId": null,
-                 "displayName": "未知类型", "kind": "SYMLINK"}
-                """, json()), Map.class);
-
-        assertEquals(400, response.getStatusCode().value());
-    }
-
-    @Test
-    void createMissingKindReturnsBeanValidation400WithUnifiedErrorBody() {
-        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 73, "ownerId": 7, "parentId": null,
-                 "displayName": "缺少类型"}
-                """, json()), Map.class);
-
-        assertAll(
-                () -> assertEquals(400, response.getStatusCode().value()),
-                () -> assertEquals("Bad Request", response.getBody().get("error")),
-                () -> assertTrue(String.valueOf(response.getBody().get("message"))
-                        .contains("kind must not be blank"))
-        );
-    }
-
-    @Test
-    void createNonPositiveIdReturns400() {
-        ResponseEntity<Map> response = rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 0, "ownerId": 7, "parentId": null,
-                 "displayName": "非法 id", "kind": "DIRECTORY"}
-                """, json()), Map.class);
-
-        assertEquals(400, response.getStatusCode().value());
-    }
-
-    @Test
-    void createMalformedJsonReturns400() {
-        ResponseEntity<Map> response =
-                rest.postForEntity("/api/entries", new HttpEntity<>("{ not json", json()), Map.class);
-
-        assertEquals(400, response.getStatusCode().value());
-    }
-
-    @Test
-    void renameToBlankReturns400AndKeepsOldName() {
-        rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 81, "ownerId": 7, "parentId": null,
-                 "displayName": "原名", "kind": "DOCUMENT", "byteSize": 5}
-                """, json()), Map.class);
-
-        ResponseEntity<Map> rejected = rest.exchange(
-                "/api/entries/81/name", HttpMethod.PUT,
-                new HttpEntity<>("{\"displayName\": \"\"}", json()), Map.class);
-        ResponseEntity<Map> after = rest.getForEntity("/api/entries/81", Map.class);
-
-        assertAll(
-                () -> assertEquals(400, rejected.getStatusCode().value()),
-                () -> assertEquals("原名", after.getBody().get("displayName"))
-        );
-    }
-
-    @Test
-    void renameMissingEntryReturns404() {
-        ResponseEntity<Map> response = rest.exchange(
-                "/api/entries/9999/name", HttpMethod.PUT,
-                new HttpEntity<>("{\"displayName\": \"新名\"}", json()), Map.class);
-
-        assertEquals(404, response.getStatusCode().value());
-    }
-
-    @Test
-    void renameValidEntryReturns204AndIsVisible() {
-        rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 82, "ownerId": 7, "parentId": null,
-                 "displayName": "改名前", "kind": "DOCUMENT", "byteSize": 9}
-                """, json()), Map.class);
-
-        ResponseEntity<Void> response = rest.exchange(
-                "/api/entries/82/name", HttpMethod.PUT,
-                new HttpEntity<>("{\"displayName\": \"改名后\"}", json()), Void.class);
-        ResponseEntity<Map> after = rest.getForEntity("/api/entries/82", Map.class);
-
-        assertAll(
-                () -> assertEquals(204, response.getStatusCode().value()),
-                () -> assertEquals("改名后", after.getBody().get("displayName"))
-        );
-    }
-
-    @Test
-    void findNonNumericIdReturns400() {
-        ResponseEntity<Map> response = rest.getForEntity("/api/entries/abc", Map.class);
-
-        assertEquals(400, response.getStatusCode().value());
-    }
-
-    @Test
-    void snapshotWithSuccessfulSinkReturns200WithCount() {
-        rest.postForEntity("/api/entries", new HttpEntity<>("""
-                {"id": 91, "ownerId": 7, "parentId": null,
-                 "displayName": "快照条目", "kind": "DIRECTORY"}
-                """, json()), Map.class);
-
-        ResponseEntity<Map> response = rest.postForEntity(
-                URI.create("/api/snapshots"), new HttpEntity<>(json()), Map.class);
-
-        assertAll(
-                () -> assertEquals(200, response.getStatusCode().value()),
-                () -> assertNotNull(response.getBody().get("entryCount"))
-        );
-    }
+    private record Session(long id, HttpHeaders headers) { }
 }

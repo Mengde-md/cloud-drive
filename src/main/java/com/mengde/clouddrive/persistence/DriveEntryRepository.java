@@ -6,6 +6,7 @@ import com.mengde.clouddrive.domain.DriveEntry;
 import com.mengde.clouddrive.domain.EntryKind;
 import com.mengde.clouddrive.error.DuplicateEntryException;
 import com.mengde.clouddrive.error.EntryNotFoundException;
+import com.mengde.clouddrive.error.DuplicateEntryNameException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -47,6 +48,39 @@ public class DriveEntryRepository {
                 .toList();
     }
 
+    public DriveEntry saveGenerated(long ownerId, Long parentId, String displayName, EntryKind kind, long byteSize) {
+        DriveEntryInsertRow row = new DriveEntryInsertRow();
+        row.setOwnerId(ownerId);
+        row.setParentId(parentId);
+        row.setDisplayName(displayName.trim());
+        row.setKind(kind.name());
+        row.setByteSize(kind == EntryKind.DOCUMENT ? byteSize : null);
+        try {
+            mapper.insertGenerated(row);
+        } catch (DuplicateKeyException exception) {
+            throw new DuplicateEntryNameException(displayName);
+        }
+        return findByOwnerAndId(ownerId, row.getId());
+    }
+
+    public DriveEntry findByOwnerAndId(long ownerId, long id) {
+        return mapper.findByOwnerAndId(ownerId, id)
+                .map(this::toDomain)
+                .orElseThrow(() -> new EntryNotFoundException(id));
+    }
+
+    public List<DriveEntry> findAllByOwner(long ownerId) {
+        return mapper.findAllByOwner(ownerId).stream().map(this::toDomain).toList();
+    }
+
+    public long usedBytesByOwner(long ownerId) {
+        return mapper.usedBytesByOwner(ownerId);
+    }
+
+    public boolean hasChildren(long ownerId, long parentId) {
+        return mapper.countChildrenByOwnerAndParent(ownerId, parentId) > 0;
+    }
+
     public void rename(long id, String displayName) {
         int updated = mapper.updateDisplayName(id, displayName);
         if (updated == 0) {
@@ -54,8 +88,25 @@ public class DriveEntryRepository {
         }
     }
 
+    public void renameByOwner(long ownerId, long id, String displayName) {
+        try {
+            int updated = mapper.updateDisplayNameByOwner(ownerId, id, displayName.trim());
+            if (updated == 0) {
+                throw new EntryNotFoundException(id);
+            }
+        } catch (DuplicateKeyException exception) {
+            throw new DuplicateEntryNameException(displayName);
+        }
+    }
+
     public void deleteById(long id) {
         mapper.deleteById(id);
+    }
+
+    public void deleteByOwnerAndId(long ownerId, long id) {
+        if (mapper.deleteByOwnerAndId(ownerId, id) == 0) {
+            throw new EntryNotFoundException(id);
+        }
     }
 
     public void deleteAll() {

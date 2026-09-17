@@ -2,6 +2,9 @@ package com.mengde.clouddrive.web;
 
 import com.mengde.clouddrive.error.DuplicateEntryException;
 import com.mengde.clouddrive.error.EntryNotFoundException;
+import com.mengde.clouddrive.error.DuplicateEntryNameException;
+import com.mengde.clouddrive.error.DirectoryNotEmptyException;
+import com.mengde.clouddrive.error.QuotaExceededException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -35,6 +38,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateEntryException.class)
     public ResponseEntity<ApiError> handleDuplicateEntry(DuplicateEntryException exception) {
+        return respond(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler({DuplicateEntryNameException.class, DirectoryNotEmptyException.class, QuotaExceededException.class})
+    public ResponseEntity<ApiError> handleEntryConflict(RuntimeException exception) {
         return respond(HttpStatus.CONFLICT, exception.getMessage());
     }
 

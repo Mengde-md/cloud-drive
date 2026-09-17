@@ -20,18 +20,18 @@ class RequestValidationContractTest {
 
     @Test
     void createRequestRejectsEachInvalidTransportField() {
-        EntryCreateRequest request = new EntryCreateRequest(0, 0, 0L, "  ", null, -1L);
+        EntryCreateRequest request = new EntryCreateRequest(0L, "  ", null, -1L);
 
         Set<String> invalidFields = validator.validate(request).stream()
                 .map(violation -> violation.getPropertyPath().toString())
                 .collect(java.util.stream.Collectors.toSet());
 
-        assertEquals(Set.of("id", "ownerId", "parentId", "displayName", "kind", "byteSize"), invalidFields);
+        assertEquals(Set.of("parentId", "displayName", "kind", "byteSize"), invalidFields);
     }
 
     @Test
     void validCreateRequestAndRenameRequestPassBeanValidation() {
-        EntryCreateRequest createRequest = new EntryCreateRequest(73, 7, null, "有效文档", "DOCUMENT", 0L);
+        EntryCreateRequest createRequest = new EntryCreateRequest(null, "有效文档", "DOCUMENT", 0L);
         RenameRequest renameRequest = new RenameRequest("新名称");
 
         assertAll(

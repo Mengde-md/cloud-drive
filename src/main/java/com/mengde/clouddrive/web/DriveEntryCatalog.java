@@ -21,8 +21,8 @@ public class DriveEntryCatalog {
     private final InMemoryEntryIndex entriesById = new InMemoryEntryIndex();
     private final InMemoryEntryList orderedEntries = new InMemoryEntryList();
 
-    public synchronized DriveEntry create(EntryCreateRequest request) {
-        DriveEntry entry = request.toEntry();
+    public synchronized DriveEntry create(EntryCreateRequest request, long entryId, long ownerId) {
+        DriveEntry entry = request.toEntry(entryId, ownerId);
         entriesById.add(entry);
         orderedEntries.add(entry);
         return entry;

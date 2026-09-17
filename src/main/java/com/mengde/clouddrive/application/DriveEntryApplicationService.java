@@ -27,8 +27,8 @@ public class DriveEntryApplicationService {
     }
 
     @Transactional
-    public DriveEntry create(EntryCreateRequest request) {
-        DriveEntry entry = request.toEntry();
+    public DriveEntry create(EntryCreateRequest request, long entryId, long ownerId) {
+        DriveEntry entry = request.toEntry(entryId, ownerId);
         verifyParentExists(entry.parentId());
         return repository.save(entry);
     }

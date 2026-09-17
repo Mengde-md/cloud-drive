@@ -20,7 +20,7 @@ V6 创建 `file_shares`，保存 token、document_id、owner_id、BCrypt passcod
 
 ## Checkpoint 2：测试与边界
 
-`FileDeliveryServiceTest` 真实验证：`bytes=2-99` 被裁剪为 2–5 且只读取 `cdef`；提取码以 BCrypt 哈希存储；错误提取码和过期分享均抛分享访问异常。已有全链测试在 V6 Flyway 下仍通过。
+`FileDeliveryServiceTest` 真实验证：`bytes=2-99` 被裁剪为 2–5 且只读取 `cdef`；提取码以 BCrypt 哈希存储；错误提取码和过期分享均抛分享访问异常。新增 `FileDeliveryHttpContractTest` 用真实 Spring Boot、JWT、Flyway/MySQL 与本地对象目录验证 owner Range 的 206/`Content-Range`/实际正文、错误提取码 404、正确提取码匿名下载 200。测试夹具先删除分享再删除文档，避免将 Day22 的业务删除策略偷带入 Day19。
 
 真实 Debug 风险：若把公开分享路径写成 `/api/shares/**`，创建分享也会绕过认证；因此仅放行下载精确路径。若把 `Range` 字符串直接 split 后使用而不校验，负数、多段和越界会导致错误响应或文件读取边界失控。
 
@@ -28,11 +28,11 @@ V6 创建 `file_shares`，保存 token、document_id、owner_id、BCrypt passcod
 
 代码提交：`0e5098b feat(day19): add range download and passcode shares`。
 
-Day19 自身测试：`mvn -Dtest=FileDeliveryServiceTest test` 通过，退出码 0。全量回归和发布脚本将在文档完成后运行。
+Day19 自身测试：`mvn -Dtest=FileDeliveryServiceTest,FileDeliveryHttpContractTest test` 通过，退出码 0。全量回归和发布脚本将在文档完成后运行。
 
 ## 教材自审
 
-Day02 的问题→职责→测试闭环：教材从 Day18“对象已写但不能读”出发，分别走读存储接口、Range 解析、分享校验和测试断言。Day05 的失败证据门：错误提取码、过期、越界 Range 与多 Range 都有明确拒绝边界。项目源码为 `LocalObjectStorage`、`FileDeliveryService`、`FileDeliveryController`；项目测试为 `FileDeliveryServiceTest`。
+Day02 的问题→职责→测试闭环：教材从 Day18“对象已写但不能读”出发，分别走读存储接口、Range 解析、分享校验和测试断言。Day05 的失败证据门：错误提取码、过期、越界 Range、多 Range 与分享外键夹具冲突均有明确证据。项目源码为 `LocalObjectStorage`、`FileDeliveryService`、`FileDeliveryController`；项目测试为 `FileDeliveryServiceTest` 与 `FileDeliveryHttpContractTest`。教材使用自然段、完整协议表和真实源码/测试，不以单句换行制造物理行数。
 
 ## 面试题
 

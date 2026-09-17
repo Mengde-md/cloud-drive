@@ -8,6 +8,7 @@ import com.mengde.clouddrive.error.QuotaExceededException;
 import com.mengde.clouddrive.error.UploadSessionIncompleteException;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
 import com.mengde.clouddrive.persistence.StoredDocumentRow;
+import com.mengde.clouddrive.redis.PrivateEntryMetadataCache;
 import com.mengde.clouddrive.storage.ObjectStorage;
 import com.mengde.clouddrive.storage.StoredObject;
 import org.springframework.stereotype.Service;
@@ -25,15 +26,17 @@ public class UploadSessionApplicationService {
     private final ObjectStorage objects;
     private final DriveEntryRepository entries;
     private final UserAccountMapper users;
+    private final PrivateEntryMetadataCache metadataCache;
 
     public UploadSessionApplicationService(UploadSessionRepository sessions, ChunkStorage chunks,
                                            ObjectStorage objects, DriveEntryRepository entries,
-                                           UserAccountMapper users) {
+                                           UserAccountMapper users, PrivateEntryMetadataCache metadataCache) {
         this.sessions = sessions;
         this.chunks = chunks;
         this.objects = objects;
         this.entries = entries;
         this.users = users;
+        this.metadataCache = metadataCache;
     }
 
     @Transactional
@@ -78,6 +81,7 @@ public class UploadSessionApplicationService {
             verifyQuota(user.id(), finalObject.byteSize());
             StoredDocumentRow document = entries.saveStoredDocument(user.id(), session.getParentId(),
                     session.getDisplayName(), finalObject.byteSize(), finalObject.storageKey(), finalObject.md5());
+            metadataCache.evictOwner(user.id());
             sessions.markCompleted(sessionId);
             sessions.deleteChunks(sessionId);
             chunks.clearSession(sessionId);

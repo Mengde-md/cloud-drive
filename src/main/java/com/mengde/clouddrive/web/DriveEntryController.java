@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import com.mengde.clouddrive.redis.PrivateEntryMetadataCache;
 
 /**
  * 条目资源 (/api/entries) 的 HTTP 契约：
@@ -27,36 +28,37 @@ import java.util.List;
 public class DriveEntryController {
 
     private final OwnedDriveEntryApplicationService entryService;
+    private final PrivateEntryMetadataCache cache;
 
-    public DriveEntryController(OwnedDriveEntryApplicationService entryService) {
-        this.entryService = entryService;
+    public DriveEntryController(OwnedDriveEntryApplicationService entryService, PrivateEntryMetadataCache cache) {
+        this.entryService = entryService; this.cache = cache;
     }
 
     @GetMapping
     public List<EntryResponse> listAll(@AuthenticationPrincipal AuthenticatedUser user) {
-        return entryService.list(user).stream().map(EntryResponse::from).toList();
+        return cache.list(user.id(), () -> entryService.list(user).stream().map(EntryResponse::from).toList());
     }
 
     @PostMapping
     public ResponseEntity<EntryResponse> create(@AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody EntryCreateRequest request) {
         DriveEntry created = entryService.create(user, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(EntryResponse.from(created));
+        cache.evictOwner(user.id()); return ResponseEntity.status(HttpStatus.CREATED).body(EntryResponse.from(created));
     }
 
     @GetMapping("/{id}")
     public EntryResponse find(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable("id") long id) {
-        return EntryResponse.from(entryService.find(user, id));
+        return cache.entry(user.id(), id, () -> EntryResponse.from(entryService.find(user, id)));
     }
 
     @PutMapping("/{id}/name")
     public ResponseEntity<Void> rename(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable("id") long id, @Valid @RequestBody RenameRequest request) {
-        entryService.rename(user, id, request.displayName());
+        entryService.rename(user, id, request.displayName()); cache.evictEntry(user.id(), id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable("id") long id) {
-        entryService.delete(user, id);
+        entryService.delete(user, id); cache.evictEntry(user.id(), id);
         return ResponseEntity.noContent().build();
     }
 }

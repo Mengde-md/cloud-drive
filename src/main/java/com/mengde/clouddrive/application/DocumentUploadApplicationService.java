@@ -7,6 +7,7 @@ import com.mengde.clouddrive.domain.DriveEntry;
 import com.mengde.clouddrive.error.QuotaExceededException;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
 import com.mengde.clouddrive.persistence.StoredDocumentRow;
+import com.mengde.clouddrive.redis.PrivateEntryMetadataCache;
 import com.mengde.clouddrive.storage.ObjectStorage;
 import com.mengde.clouddrive.storage.StoredObject;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,11 @@ import java.util.Locale;
 @Service
 public class DocumentUploadApplicationService {
     private final DriveEntryRepository entries; private final UserAccountMapper users; private final ObjectStorage storage;
-    public DocumentUploadApplicationService(DriveEntryRepository entries, UserAccountMapper users, ObjectStorage storage) { this.entries = entries; this.users = users; this.storage = storage; }
+    private final PrivateEntryMetadataCache metadataCache;
+    public DocumentUploadApplicationService(DriveEntryRepository entries, UserAccountMapper users, ObjectStorage storage,
+                                            PrivateEntryMetadataCache metadataCache) {
+        this.entries = entries; this.users = users; this.storage = storage; this.metadataCache = metadataCache;
+    }
 
     @Transactional
     public StoredDocumentRow upload(AuthenticatedUser user, Long parentId, String displayName, MultipartFile file) throws IOException {
@@ -28,7 +33,10 @@ public class DocumentUploadApplicationService {
         StoredObject stored = storage.store(file.getInputStream(), file.getOriginalFilename());
         try {
             verifyQuota(user.id(), stored.byteSize());
-            return entries.saveStoredDocument(user.id(), parentId, displayName, stored.byteSize(), stored.storageKey(), stored.md5());
+            StoredDocumentRow document = entries.saveStoredDocument(user.id(), parentId, displayName,
+                    stored.byteSize(), stored.storageKey(), stored.md5());
+            metadataCache.evictOwner(user.id());
+            return document;
         } catch (RuntimeException failure) {
             storage.delete(stored.storageKey());
             throw failure;
@@ -40,7 +48,10 @@ public class DocumentUploadApplicationService {
         verifyParent(user.id(), parentId);
         StoredDocumentRow candidate = entries.findReusableStoredDocument(user.id(), md5.toLowerCase(Locale.ROOT));
         verifyQuota(user.id(), candidate.getByteSize());
-        return entries.saveStoredDocument(user.id(), parentId, displayName, candidate.getByteSize(), candidate.getStorageKey(), candidate.getContentMd5());
+        StoredDocumentRow document = entries.saveStoredDocument(user.id(), parentId, displayName,
+                candidate.getByteSize(), candidate.getStorageKey(), candidate.getContentMd5());
+        metadataCache.evictOwner(user.id());
+        return document;
     }
 
     private void verifyQuota(long ownerId, long requested) {

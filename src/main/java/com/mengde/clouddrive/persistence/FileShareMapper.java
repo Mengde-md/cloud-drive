@@ -4,6 +4,7 @@ import com.mengde.clouddrive.share.FileShareRow;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Delete;
 import java.util.Optional;
 
 public interface FileShareMapper {
@@ -11,4 +12,6 @@ public interface FileShareMapper {
     int insert(FileShareRow row);
     @Select("SELECT token, document_id AS documentId, owner_id AS ownerId, passcode_hash AS passcodeHash, expires_at AS expiresAt FROM file_shares WHERE token = #{token}")
     Optional<FileShareRow> findByToken(@Param("token") String token);
+    @Delete("DELETE FROM file_shares")
+    int deleteAll();
 }

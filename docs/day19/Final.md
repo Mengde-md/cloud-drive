@@ -34,6 +34,10 @@ Day19 自身测试：`mvn -Dtest=FileDeliveryServiceTest,FileDeliveryHttpContrac
 
 Day02 的问题→职责→测试闭环：教材从 Day18“对象已写但不能读”出发，分别走读存储接口、Range 解析、分享校验和测试断言。Day05 的失败证据门：错误提取码、过期、越界 Range、多 Range 与分享外键夹具冲突均有明确证据。项目源码为 `LocalObjectStorage`、`FileDeliveryService`、`FileDeliveryController`；项目测试为 `FileDeliveryServiceTest` 与 `FileDeliveryHttpContractTest`。教材使用自然段、完整协议表和真实源码/测试，不以单句换行制造物理行数。
 
+### 文档同步复审 2026 09 18
+
+Day19 教材曾在早期“测试矩阵”和第 22 节中遗留“HTTP 合同测试待补”的历史说法，但 `62bf447 test(day19): add range and share HTTP contract` 已实际提供该测试。现已统一为：`FileDeliveryServiceTest` 负责隔离服务规则；`FileDeliveryHttpContractTest` 负责真实 Spring Boot/JWT/MySQL/对象目录下的 206、`Content-Range`、错误提取码 404 与正确提取码 200 合同。教材的两个重复“明日唯一输入”也已合并为一个；未覆盖的 HTTP 边界仍明确标作后续补强，不伪称已验证。
+
 ## 面试题
 
 1. 为什么 Range 响应是 206 而不是 200？`Content-Range` 表示什么？

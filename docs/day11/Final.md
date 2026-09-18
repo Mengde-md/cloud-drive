@@ -79,6 +79,10 @@ AOP 通常由代理在调用边界织入横切行为，例如日志、鉴权、�
 
 **审计结论**：Day11 的独立 Spring context 实验只作原理验证；完整教材已用当前 Boot 源码、HTTP 测试与 Mapper 测试闭环。人工学习门仍待用户自行完成，AI 不得代填。
 
+### 教材返工复审 2026 09 18
+
+原教材为 613 行，低于当前完整教材下限。本次未改 Day11 的原理日工程资产，而是以 `DriveEntryWebApplication`、Web/Mapper 测试、`GlobalExceptionHandler` 与 Spring context 实验为依据扩写至 651 行、19,591 字符。补充了生产事实—测试证据反向表、事务代理与配置职责的两条失败链、面试表达和复读顺序；只保留全文末尾一个“明日唯一输入”，不将独立实验夸大为业务功能。
+
 ## 明日唯一输入
 
 输入是 Day11 Final、独立 Spring context 输出、干净提交与机器闸门。Day12 才首次引入 `@Transactional`、HTTP→application→MySQL 接线、合同测试隔离和 OpenAPI/Postman；不提前实现这些能力。

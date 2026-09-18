@@ -12,6 +12,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import com.mengde.clouddrive.web.TrashEntryResponse;
 
 /**
  * 持久化门面：把领域对象 {@link DriveEntry} 与数据库行
@@ -128,6 +129,20 @@ public class DriveEntryRepository {
             throw new EntryNotFoundException(id);
         }
     }
+
+    public List<TrashEntryResponse> findTrashByOwner(long ownerId, int page, int size) {
+        return mapper.findTrashByOwner(ownerId, page * size, size).stream()
+                .map(row -> new TrashEntryResponse(row.getId(), row.getParentId(), row.getDisplayName(), row.getKind(), row.getByteSize(), row.getDeletedAt())).toList();
+    }
+
+    public long countTrashByOwner(long ownerId) { return mapper.countTrashByOwner(ownerId); }
+
+    public void restoreByOwnerAndId(long ownerId, long id) {
+        try { if (mapper.restoreByOwnerAndId(ownerId, id) == 0) throw new EntryNotFoundException(id); }
+        catch (DuplicateKeyException e) { throw new DuplicateEntryNameException("restored entry"); }
+    }
+
+    public void purgeTrashByOwner(long ownerId) { mapper.purgeTrashByOwner(ownerId); }
 
     public void deleteAll() {
         mapper.deleteAll();

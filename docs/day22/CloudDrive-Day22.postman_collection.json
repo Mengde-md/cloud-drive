@@ -1,0 +1,11 @@
+{
+  "info": {"name": "CloudDrive Day22 Trash and Observability", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [{"key": "baseUrl", "value": "http://localhost:8080"}, {"key": "token", "value": "replace-with-jwt"}, {"key": "entryId", "value": "1"}],
+  "item": [
+    {"name": "active page", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/api/entries/page?page=0&size=20"}},
+    {"name": "trash page", "request": {"method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/api/entries/trash?page=0&size=20"}},
+    {"name": "restore trash entry", "request": {"method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/api/entries/trash/{{entryId}}/restore"}},
+    {"name": "purge my trash", "request": {"method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "{{baseUrl}}/api/entries/trash"}},
+    {"name": "health", "request": {"method": "GET", "url": "{{baseUrl}}/actuator/health"}}
+  ]
+}

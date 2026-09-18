@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import com.mengde.clouddrive.web.EntryPageResponse;
+import com.mengde.clouddrive.web.EntryResponse;
+import com.mengde.clouddrive.web.TrashEntryResponse;
+import com.mengde.clouddrive.web.TrashPageResponse;
 
 /** Day16 owner boundary: every entry operation starts from the authenticated principal. */
 @Service
@@ -32,6 +36,21 @@ public class OwnedDriveEntryApplicationService {
     @Transactional(readOnly = true)
     public DriveEntry find(AuthenticatedUser user, long entryId) {
         return entries.findByOwnerAndId(user.id(), entryId);
+    }
+
+    @Transactional(readOnly = true)
+    public EntryPageResponse page(AuthenticatedUser user, int page, int size) {
+        if (page < 0 || size < 1 || size > 100) throw new IllegalArgumentException("page must be >= 0 and size must be 1..100");
+        List<DriveEntry> all = entries.findAllByOwner(user.id());
+        int from = Math.min(page * size, all.size()); int to = Math.min(from + size, all.size());
+        return new EntryPageResponse(all.subList(from, to).stream().map(EntryResponse::from).toList(), page, size, all.size());
+    }
+
+    @Transactional(readOnly = true)
+    public TrashPageResponse trash(AuthenticatedUser user, int page, int size) {
+        if (page < 0 || size < 1 || size > 100) throw new IllegalArgumentException("page must be >= 0 and size must be 1..100");
+        List<TrashEntryResponse> items = entries.findTrashByOwner(user.id(), page, size);
+        return new TrashPageResponse(items, page, size, entries.countTrashByOwner(user.id()));
     }
 
     @Transactional
@@ -59,6 +78,9 @@ public class OwnedDriveEntryApplicationService {
         }
         entries.deleteByOwnerAndId(user.id(), entryId);
     }
+
+    @Transactional public void restore(AuthenticatedUser user, long id) { entries.restoreByOwnerAndId(user.id(), id); }
+    @Transactional public void purgeTrash(AuthenticatedUser user) { entries.purgeTrashByOwner(user.id()); }
 
     private void verifyParent(long ownerId, Long parentId) {
         if (parentId == null) {

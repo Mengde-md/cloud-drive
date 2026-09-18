@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import com.mengde.clouddrive.redis.PrivateEntryMetadataCache;
@@ -37,6 +38,26 @@ public class DriveEntryController {
     @GetMapping
     public List<EntryResponse> listAll(@AuthenticationPrincipal AuthenticatedUser user) {
         return cache.list(user.id(), () -> entryService.list(user).stream().map(EntryResponse::from).toList());
+    }
+
+    @GetMapping("/page")
+    public EntryPageResponse page(@AuthenticationPrincipal AuthenticatedUser user, @RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "20") int size) {
+        return entryService.page(user, page, size);
+    }
+
+    @GetMapping("/trash")
+    public TrashPageResponse trash(@AuthenticationPrincipal AuthenticatedUser user, @RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "20") int size) {
+        return entryService.trash(user, page, size);
+    }
+
+    @PostMapping("/trash/{id}/restore")
+    public ResponseEntity<Void> restore(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable("id") long id) {
+        entryService.restore(user, id); cache.evictEntry(user.id(), id); return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/trash")
+    public ResponseEntity<Void> purgeTrash(@AuthenticationPrincipal AuthenticatedUser user) {
+        entryService.purgeTrash(user); cache.evictOwner(user.id()); return ResponseEntity.noContent().build();
     }
 
     @PostMapping

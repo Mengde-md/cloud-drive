@@ -8,6 +8,7 @@ import com.mengde.clouddrive.error.QuotaExceededException;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
 import com.mengde.clouddrive.persistence.StoredDocumentRow;
 import com.mengde.clouddrive.redis.PrivateEntryMetadataCache;
+import com.mengde.clouddrive.redis.UploadCoordination;
 import com.mengde.clouddrive.storage.ObjectStorage;
 import com.mengde.clouddrive.storage.StoredObject;
 import org.springframework.stereotype.Service;
@@ -22,36 +23,41 @@ import java.util.Locale;
 public class DocumentUploadApplicationService {
     private final DriveEntryRepository entries; private final UserAccountMapper users; private final ObjectStorage storage;
     private final PrivateEntryMetadataCache metadataCache;
+    private final UploadCoordination coordination;
     public DocumentUploadApplicationService(DriveEntryRepository entries, UserAccountMapper users, ObjectStorage storage,
-                                            PrivateEntryMetadataCache metadataCache) {
-        this.entries = entries; this.users = users; this.storage = storage; this.metadataCache = metadataCache;
+                                            PrivateEntryMetadataCache metadataCache, UploadCoordination coordination) {
+        this.entries = entries; this.users = users; this.storage = storage; this.metadataCache = metadataCache; this.coordination = coordination;
     }
 
     @Transactional
     public StoredDocumentRow upload(AuthenticatedUser user, Long parentId, String displayName, MultipartFile file) throws IOException {
-        verifyParent(user.id(), parentId);
-        StoredObject stored = storage.store(file.getInputStream(), file.getOriginalFilename());
-        try {
-            verifyQuota(user.id(), stored.byteSize());
-            StoredDocumentRow document = entries.saveStoredDocument(user.id(), parentId, displayName,
-                    stored.byteSize(), stored.storageKey(), stored.md5());
-            metadataCache.evictOwner(user.id());
-            return document;
-        } catch (RuntimeException failure) {
-            storage.delete(stored.storageKey());
-            throw failure;
+        try (var ignored = coordination.acquireOwnerUploadLock(user.id())) {
+            verifyParent(user.id(), parentId);
+            StoredObject stored = storage.store(file.getInputStream(), file.getOriginalFilename());
+            try {
+                verifyQuota(user.id(), stored.byteSize());
+                StoredDocumentRow document = entries.saveStoredDocument(user.id(), parentId, displayName,
+                        stored.byteSize(), stored.storageKey(), stored.md5());
+                metadataCache.evictOwner(user.id());
+                return document;
+            } catch (RuntimeException failure) {
+                storage.delete(stored.storageKey());
+                throw failure;
+            }
         }
     }
 
     @Transactional
     public StoredDocumentRow instantUpload(AuthenticatedUser user, Long parentId, String displayName, String md5) {
-        verifyParent(user.id(), parentId);
-        StoredDocumentRow candidate = entries.findReusableStoredDocument(user.id(), md5.toLowerCase(Locale.ROOT));
-        verifyQuota(user.id(), candidate.getByteSize());
-        StoredDocumentRow document = entries.saveStoredDocument(user.id(), parentId, displayName,
-                candidate.getByteSize(), candidate.getStorageKey(), candidate.getContentMd5());
-        metadataCache.evictOwner(user.id());
-        return document;
+        try (var ignored = coordination.acquireOwnerUploadLock(user.id())) {
+            verifyParent(user.id(), parentId);
+            StoredDocumentRow candidate = entries.findReusableStoredDocument(user.id(), md5.toLowerCase(Locale.ROOT));
+            verifyQuota(user.id(), candidate.getByteSize());
+            StoredDocumentRow document = entries.saveStoredDocument(user.id(), parentId, displayName,
+                    candidate.getByteSize(), candidate.getStorageKey(), candidate.getContentMd5());
+            metadataCache.evictOwner(user.id());
+            return document;
+        }
     }
 
     private void verifyQuota(long ownerId, long requested) {

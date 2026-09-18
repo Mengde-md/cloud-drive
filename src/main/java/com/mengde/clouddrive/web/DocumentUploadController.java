@@ -3,6 +3,7 @@ package com.mengde.clouddrive.web;
 import com.mengde.clouddrive.application.DocumentUploadApplicationService;
 import com.mengde.clouddrive.auth.AuthenticatedUser;
 import com.mengde.clouddrive.persistence.StoredDocumentRow;
+import com.mengde.clouddrive.redis.UploadRequestRateLimiter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -21,16 +22,21 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/files")
 public class DocumentUploadController {
     private final DocumentUploadApplicationService uploads;
-    public DocumentUploadController(DocumentUploadApplicationService uploads) { this.uploads = uploads; }
+    private final UploadRequestRateLimiter rateLimiter;
+    public DocumentUploadController(DocumentUploadApplicationService uploads, UploadRequestRateLimiter rateLimiter) {
+        this.uploads = uploads; this.rateLimiter = rateLimiter;
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<UploadResponse> upload(@AuthenticationPrincipal AuthenticatedUser user,
             @RequestParam(value = "parentId", required = false) Long parentId, @RequestParam("displayName") @NotBlank String displayName,
             @RequestParam("file") MultipartFile file) throws java.io.IOException {
+        rateLimiter.requirePermit(user.id(), UploadRequestRateLimiter.Operation.DIRECT_UPLOAD);
         return ResponseEntity.status(HttpStatus.CREATED).body(UploadResponse.from(uploads.upload(user, parentId, displayName, file), false));
     }
     @PostMapping("/instant")
     public ResponseEntity<UploadResponse> instant(@AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody InstantUploadRequest request) {
+        rateLimiter.requirePermit(user.id(), UploadRequestRateLimiter.Operation.INSTANT_UPLOAD);
         return ResponseEntity.status(HttpStatus.CREATED).body(UploadResponse.from(uploads.instantUpload(user, request.parentId(), request.displayName(), request.md5()), true));
     }
     public record InstantUploadRequest(@Positive Long parentId, @NotBlank String displayName, @Pattern(regexp = "[a-fA-F0-9]{32}") String md5) { }

@@ -7,6 +7,8 @@ import com.mengde.clouddrive.error.DirectoryNotEmptyException;
 import com.mengde.clouddrive.error.QuotaExceededException;
 import com.mengde.clouddrive.error.InstantUploadCandidateNotFoundException;
 import com.mengde.clouddrive.error.UploadSessionIncompleteException;
+import com.mengde.clouddrive.error.UploadInProgressException;
+import com.mengde.clouddrive.error.UploadRateLimitExceededException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -54,6 +56,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({DuplicateEntryNameException.class, DirectoryNotEmptyException.class, QuotaExceededException.class, UploadSessionIncompleteException.class})
     public ResponseEntity<ApiError> handleEntryConflict(RuntimeException exception) {
         return respond(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(UploadInProgressException.class)
+    public ResponseEntity<ApiError> handleUploadInProgress(UploadInProgressException exception) {
+        return respond(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(UploadRateLimitExceededException.class)
+    public ResponseEntity<ApiError> handleUploadRateLimit(UploadRateLimitExceededException exception) {
+        return respond(HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
     }
 
     @ExceptionHandler({IllegalArgumentException.class,

@@ -5,6 +5,7 @@ import com.mengde.clouddrive.auth.AuthenticatedUser;
 import com.mengde.clouddrive.persistence.StoredDocumentRow;
 import com.mengde.clouddrive.upload.UploadSessionApplicationService;
 import com.mengde.clouddrive.upload.UploadSessionRow;
+import com.mengde.clouddrive.redis.UploadRequestRateLimiter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -25,11 +26,15 @@ import java.io.IOException;
 @RequestMapping("/api/upload-sessions")
 public class UploadSessionController {
     private final UploadSessionApplicationService uploads;
-    public UploadSessionController(UploadSessionApplicationService uploads) { this.uploads = uploads; }
+    private final UploadRequestRateLimiter rateLimiter;
+    public UploadSessionController(UploadSessionApplicationService uploads, UploadRequestRateLimiter rateLimiter) {
+        this.uploads = uploads; this.rateLimiter = rateLimiter;
+    }
 
     @PostMapping
     public ResponseEntity<SessionResponse> start(@AuthenticationPrincipal AuthenticatedUser user,
                                                   @Valid @RequestBody StartUploadRequest request) {
+        rateLimiter.requirePermit(user.id(), UploadRequestRateLimiter.Operation.START_SESSION);
         return ResponseEntity.status(HttpStatus.CREATED).body(SessionResponse.from(
                 uploads.start(user, request.parentId(), request.displayName(), request.totalChunks())));
     }
@@ -39,6 +44,7 @@ public class UploadSessionController {
                                                    @PathVariable("sessionId") String sessionId,
                                                    @PathVariable("chunkIndex") int chunkIndex,
                                                    @RequestParam("file") MultipartFile file) throws IOException {
+        rateLimiter.requirePermit(user.id(), UploadRequestRateLimiter.Operation.PUT_CHUNK);
         var result = uploads.putChunk(user, sessionId, chunkIndex, file);
         return ResponseEntity.status(result.alreadyReceived() ? HttpStatus.OK : HttpStatus.CREATED)
                 .body(new ChunkResponse(result.chunkIndex(), result.byteSize(), result.md5(), result.alreadyReceived()));
@@ -47,6 +53,7 @@ public class UploadSessionController {
     @PostMapping("/{sessionId}/complete")
     public ResponseEntity<DocumentUploadController.UploadResponse> complete(@AuthenticationPrincipal AuthenticatedUser user,
                                                                               @PathVariable("sessionId") String sessionId) throws IOException {
+        rateLimiter.requirePermit(user.id(), UploadRequestRateLimiter.Operation.COMPLETE_SESSION);
         StoredDocumentRow row = uploads.complete(user, sessionId);
         return ResponseEntity.status(HttpStatus.CREATED).body(DocumentUploadController.UploadResponse.from(row, false));
     }

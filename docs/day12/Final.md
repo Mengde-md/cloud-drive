@@ -57,6 +57,10 @@ Day07 已有 MyBatis Mapper、Repository、Flyway 表和真实 MySQL 测试，�
 
 **返工复审记录（2026-09-15）**：教材从 74 行/3,799 字符/1 个 Java 片段扩展为 615 行/29,226 字符/13 个 Java 片段，并补齐真实 HTTP 合同逐例走读、异常翻译链、事务代理三个反例、配置与重启证据链、SQL 小卷和闭卷复盘。此结论只表示教材交付的素材完整度已复审；Postman 重启、真实 `EXPLAIN`、MVCC 双会话和闭卷复刻仍只能由学习者亲自记录。
 
+### 教材返工复审 2026 09 18
+
+教材原为 615 行，未满足当前 650 行下限。本次以既有 `DriveEntryApplicationService`、Controller、Mapper、`GlobalExceptionHandler`、HTTP 合同与 Mapper 测试为依据扩写到 650 行、30,766 字符；补充事务/异常/HTTP 证据边界、Debug 13--14、答辩模板和 SQL 复读清单。未改 Day12 业务代码或测试，也不把 Day13 的设计模式复盘写成 Day12 能力。
+
 ## 明日唯一输入
 
 输入是本日事务应用服务、MySQL HTTP 合同证据、Postman Collection 和干净提交。Day13 只复盘设计模式与 Spring 对应关系；在用户完成手工重启验证与人工学习门前不新增业务功能。

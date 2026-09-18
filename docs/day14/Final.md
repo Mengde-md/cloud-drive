@@ -30,6 +30,10 @@
 - 教材包含前日衔接、真实问题、项目源码走读、项目测试走读、九个 Debug、独立复刻、算法/SQL/Java/网络题、十道面试题和明日输入。它反复声明 Day14 不是实际网盘缓存接入。
 - **教材自审（Day02/Day05 对照）**：Day02 的“问题→抽象→源码→测试”结构在第 1、4、7、8、10、15 节保留；Day05 的“容量/故障不能只背定义”思路在击穿、雪崩、超时预算和最小上下文 Debug 中保留。教材不拿未发生的压测、认证或业务缓存作证据。
 
+### 教材返工复审 2026 09 18
+
+原教材为 503 行，低于完整递进教材的 650 行下限。本次以 `48660b9` 的 `RedisCacheAsideLab`、`RedisLabTestConfiguration`、`RedisCacheAsideLabIntegrationTest` 与 `RedisDataStructuresIntegrationTest` 为唯一事实来源扩写为 654 行、27,862 字符。新增正值/负 marker 状态机、key 验证、最小 Redis context、supplier 调用计数、精确 cleanup、连接/序列化边界及 Debug 13--17；不把 Day20 的 owner metadata 缓存、JSON 降级或分布式锁倒灌到 Day14。教材只保留全文末尾一个“明日唯一输入”，无占位内容。
+
 ## 独立复刻任务
 
 在临时目录写一个仅允许 `lab:*` key 的 cache-aside 函数：第一次正值回源、第二次命中、删除后第三次回源；再写独立 absent key 的短 TTL 空值路径。说明为什么不能直接迁移到当前真实 `DriveEntry` 查询。

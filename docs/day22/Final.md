@@ -28,12 +28,12 @@ Day21 已有 owner/session Redisson 方法体互斥、按 owner + operation 的 
 
 | 审计项 | 真实教材证据 | 结论 |
 | --- | --- | --- |
-| 前日衔接与问题 | 第 0-1 节从 Day21 上传协调边界推导误删、分页和排障问题 | 已覆盖 |
-| 项目源码走读 | 第 2-3 节走读 V7、mapper 活动过滤、controller/service/page 契约与 timing filter | 已覆盖 |
-| 项目测试走读 | 第 4 节走读 `TrashHttpContractTest` 和 owner 隔离断言 | 已覆盖 |
-| Debug | 第 5 节至少四类：漏过滤、恢复重名、参数绑定、日志泄密 | 已覆盖 |
-| 阶段题 | 第 7 节含算法、SQL、Java 题 | 已覆盖 |
-| 面试与复刻 | 第 6、8 节包含简历说法、追问与闭卷复刻 | 已覆盖 |
-| 篇幅要求 | 教材 655 行；已按源码、测试、Debug、阶段题与独立复刻逐项复审 | 通过 |
+| 前日衔接与问题 | 第 0-1 节以 Day21 owner/session 协调和上传限流的边界推导误删恢复、分页契约与单体排障问题 | 通过 |
+| 生产源码走读 | 第 20、26、30 节逐段核对 V7、`DriveEntryMapper`、`DriveEntryRepository`、`OwnedDriveEntryApplicationService`、`DriveEntryController`、DTO、缓存失效与 `RequestTimingFilter` | 通过 |
+| 测试与矩阵 | 第 21 节逐行走读真实 `TrashHttpContractTest` 的 JWT、真实 HTTP、Alice/Bob 隔离、404 与 204 断言；第 16、21.1 节区分已有自动化与手工/后续合同演练 | 通过 |
+| Debug 与故障演练 | 第 22、27 节覆盖活动过滤遗漏、同名恢复 500/竞态、参数绑定、日志泄密/缺失、health 误判，并给出症状、定位、修复、回归与证据包 | 通过 |
+| OpenAPI/Postman 与可观测性 | 第 5、14-15、21.2、26 节逐项核对 `openapi.yaml`、Postman 变量、health 白名单和脱敏完成日志边界 | 通过 |
+| 阶段题、面试与独立复刻 | 第 23、24、28 节包含稳定排序/offset 推导、窗口 SQL、finally 语义、简历讲法、追问答案、闭卷复刻和错因模板 | 通过 |
+| 篇幅与自然段质量 | 教材 651 个 Markdown 物理行；全文复读并合并短句伪段落与重复卡片，保留代码块、表格、Checklist 和复刻步骤等必要结构行 | 通过 |
 
 本表不代表用户已学会；用户仍需口述、闭卷复刻、记录错因和完成题单。

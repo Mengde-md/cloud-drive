@@ -75,9 +75,13 @@ $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=C:\Environment\cdl-java-so
 | 阶段题 | 第 15 节算法、SQL、Java 题及答案边界 | 通过 |
 | 面试与独立复刻 | 第 14、16 节包含项目表述、追问与闭卷复刻任务 | 通过 |
 | 运行证据 | 第 12、17 节记录专属 5 项、全量 87 项测试及验收命令 | 通过 |
-| 篇幅与段落密度 | 教材 690 行、30,701 字符；逐段复读前日衔接、生产源码、项目测试、六个 Debug 和阶段题，无逐句拆行填充 | 通过（650–799 例外已逐项覆盖真实资产） |
+| 篇幅与段落密度 | 教材 690 行、30,698 字符；逐段复读前日衔接、生产源码、项目测试、六个 Debug 和阶段题，无逐句拆行填充 | 通过（650–799 例外已逐项覆盖真实资产） |
 
 本表已按教材、项目源码与项目测试重新对照；它不代表用户已经完成口述或闭卷复刻。
+
+### 文档同步复审 2026 09 18
+
+本次以 `c61fd18` 的历史源码为依据重读 `PrivateEntryMetadataCache`、`DriveEntryController`、两条上传服务以及 `PrivateEntryMetadataCacheIntegrationTest`、`PrivateEntryCacheHttpContractTest`。确认 key 含 ownerId、TTL 为五分钟，创建/重命名/删除与三种上传落库成功后均只做 best-effort 失效；没有 Redisson、锁、MQ 或跨节点协调。5 个专属测试实际证明命中、owner 隔离、陈旧窗口、坏 JSON 修复、HTTP 预热与重命名失效。Redis 断连时的降级是 `readCachedValue`、`writeCachedValue`、`safeDelete` 的源码异常处理语义，本日测试没有人为断开 Redis；教材已将它标为故障演练与边界，而非伪称真实断连测试。
 
 ## 面试题与追问
 

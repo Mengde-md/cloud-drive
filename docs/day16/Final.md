@@ -29,6 +29,10 @@
 - `git diff --check` 为 0；实现提交后工作区干净。
 - 教材自审（Day02/Day05）：**项目源码**已重新读取 Day15 `SecurityConfiguration`/`AuthenticatedUser`，Day16 `OwnedDriveEntryApplicationService`、`DriveEntryRepository`、`DriveEntryMapper`、V3 migration、`DriveEntryController`；项目测试已重新读取 `DriveEntryHttpContractTest` 与 `RequestValidationContractTest`。教材依次记录前日衔接、真实问题、生产源码走读、项目测试走读/测试矩阵、8 个 Debug、算法/SQL/Java 题、面试与独立复刻；不把 73 项工程回归写成用户已学会。
 
+### 教材结构同步复审 2026 09 18
+
+教材原在第 49 节写入明日输入，后续第 50--56 节仍有完整请求、失败链和源码—测试核对。本次把第 49 节改为范围预览，并在全文末尾用 owner-scoped metadata、配额与数据库约束正式交接 Day17。教材现为 781 行、29,832 字符；未改 Day16 的 MySQL、认证或 HTTP 合同实现。
+
 ## 独立复刻任务
 
 不看教材，在临时分支把 `GET /api/entries/{id}` 改成故意调用未带 owner 条件的方法，先预测 Bob 能否读到 Alice 的数据，再写一条 HTTP 合同测试证明漏洞。随后恢复 owner-scoped 查询；再在根目录创建两个同名目录，解释普通 `(owner_id,parent_id,display_name)` UNIQUE 为什么会被 MySQL 的 NULL 语义绕过。

@@ -22,7 +22,7 @@ Day20 的 `PrivateEntryMetadataCache` 只缓存 owner 私有 metadata，创建�
 | --- | --- | --- |
 | Day17 | `DocumentUploadApplicationService.java` | 直接上传与秒传的对象/metadata/quota 临界区增加 owner 锁，降低跨节点重复写和补偿竞争；原有数据库约束、事务和补偿不删除。 |
 | Day17 | `DocumentUploadController.java` | 在已认证用户进入直接上传和秒传 service 前获取对应限流 permit。 |
-| Day18 | `UploadSessionApplicationService.java` | `putChunk` 与 `complete` 共享 session 锁，使顺序检查、分片写入、manifest 合并和状态转换跨节点串行。 |
+| Day18 | `UploadSessionApplicationService.java` | `putChunk` 与 `complete` 在方法体内共享 session 锁，使顺序检查、分片写入、manifest 合并和状态转换的关键操作跨节点互斥；锁不覆盖 Spring 代理后的 commit 窗口。 |
 | Day18 | `UploadSessionController.java` | 在创建会话、写分片和完成会话前按 owner + operation 限流。 |
 
 ## Final 验收记录

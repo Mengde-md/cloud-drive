@@ -1,0 +1,51 @@
+version: "3.9"
+
+# Day23: freezes a reproducible local runtime for CloudDrive's MySQL/Redis
+# dependencies. Every credential is supplied through deploy/.env (copied from
+# .env.example) — nothing here is a personal credential baked into the file.
+# Bring the stack up from the repo root with:
+#   docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
+#
+# The env var names match src/main/resources/application.properties exactly
+# (CLOUDDRIVE_DB_*, CLOUDDRIVE_REDIS_*) so the same .env file that drives this
+# compose file also drives the Spring Boot app when run locally.
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: clouddrive-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${CLOUDDRIVE_DB_NAME:?set CLOUDDRIVE_DB_NAME in deploy/.env}
+      MYSQL_USER: ${CLOUDDRIVE_DB_USERNAME:?set CLOUDDRIVE_DB_USERNAME in deploy/.env}
+      MYSQL_PASSWORD: ${CLOUDDRIVE_DB_PASSWORD:?set CLOUDDRIVE_DB_PASSWORD in deploy/.env}
+      MYSQL_ROOT_PASSWORD: ${CLOUDDRIVE_DB_ROOT_PASSWORD:?set CLOUDDRIVE_DB_ROOT_PASSWORD in deploy/.env}
+    ports:
+      - "${CLOUDDRIVE_DB_PORT:-3306}:3306"
+    volumes:
+      - clouddrive-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${CLOUDDRIVE_DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.2
+    container_name: clouddrive-redis
+    restart: unless-stopped
+    command: >
+      redis-server --requirepass ${CLOUDDRIVE_REDIS_PASSWORD:?set CLOUDDRIVE_REDIS_PASSWORD in deploy/.env}
+    ports:
+      - "${CLOUDDRIVE_REDIS_PORT:-6379}:6379"
+    volumes:
+      - clouddrive-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${CLOUDDRIVE_REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  clouddrive-mysql-data:
+  clouddrive-redis-data:

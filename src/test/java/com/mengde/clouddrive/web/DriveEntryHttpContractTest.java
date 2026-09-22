@@ -3,7 +3,10 @@ package com.mengde.clouddrive.web;
 import com.mengde.clouddrive.auth.AuthController;
 import com.mengde.clouddrive.auth.UserAccountMapper;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import com.mengde.clouddrive.persistence.FileShareMapper;
+import com.mengde.clouddrive.upload.UploadSessionRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,9 +44,17 @@ class DriveEntryHttpContractTest {
     @Autowired private TestRestTemplate rest;
     @Autowired private DriveEntryRepository entries;
     @Autowired private UserAccountMapper users;
+    @Autowired private FileShareMapper shares;
+    @Autowired private UploadSessionRepository sessions;
 
+    // FK-safe, self-healing cleanup: shares -> sessions -> entries -> users,
+    // both before and after each test (real persistent MySQL DB shared across
+    // the whole mvn test run and across separate runs).
+    @BeforeEach
     @AfterEach
     void clearPersistentFixtures() {
+        shares.deleteAll();
+        sessions.deleteAll();
         entries.deleteAll();
         users.deleteAll();
     }

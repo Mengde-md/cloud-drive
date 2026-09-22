@@ -3,6 +3,8 @@ package com.mengde.clouddrive.web;
 import com.mengde.clouddrive.auth.AuthController;
 import com.mengde.clouddrive.auth.UserAccountMapper;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import com.mengde.clouddrive.persistence.FileShareMapper;
+import com.mengde.clouddrive.upload.UploadSessionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,10 @@ class PrivateEntryCacheHttpContractTest {
     UserAccountMapper users;
     @Autowired
     StringRedisTemplate redis;
+    @Autowired
+    FileShareMapper shares;
+    @Autowired
+    UploadSessionRepository sessions;
 
     private long ownerId;
 
@@ -43,6 +49,8 @@ class PrivateEntryCacheHttpContractTest {
         if (ownerId > 0) {
             redis.delete(listKey(ownerId));
         }
+        shares.deleteAll();
+        sessions.deleteAll();
         entries.deleteAll();
         users.deleteAll();
     }

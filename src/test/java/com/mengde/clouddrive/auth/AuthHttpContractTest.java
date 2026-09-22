@@ -1,7 +1,11 @@
 package com.mengde.clouddrive.auth;
 
+import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import com.mengde.clouddrive.persistence.FileShareMapper;
+import com.mengde.clouddrive.upload.UploadSessionRepository;
 import com.mengde.clouddrive.web.ApiError;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +20,14 @@ class AuthHttpContractTest {
     @Autowired TestRestTemplate rest;
     @Autowired UserAccountMapper users;
     @Autowired AuthService service;
-    @AfterEach void clean() { users.deleteAll(); }
+    @Autowired FileShareMapper shares;
+    @Autowired UploadSessionRepository sessions;
+    @Autowired DriveEntryRepository entries;
+    // FK-safe, self-healing cleanup: this class only creates users, but a
+    // stray file_shares/upload_sessions row left by another class (or an
+    // earlier mvn test run against this same persistent MySQL database) would
+    // otherwise make a bare users.deleteAll() fail with a FK violation.
+    @BeforeEach @AfterEach void clean() { shares.deleteAll(); sessions.deleteAll(); entries.deleteAll(); users.deleteAll(); }
     @Test void registerLoginAndCurrentUserFormOneAuthenticationChain() {
         String username = "user" + System.nanoTime();
         ResponseEntity<AuthController.UserResponse> registered = rest.postForEntity("/api/auth/register", new AuthController.Credentials(username, "correct-password"), AuthController.UserResponse.class);

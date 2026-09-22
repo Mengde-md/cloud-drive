@@ -3,6 +3,8 @@ package com.mengde.clouddrive.web;
 import com.mengde.clouddrive.auth.AuthController;
 import com.mengde.clouddrive.auth.UserAccountMapper;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import com.mengde.clouddrive.persistence.FileShareMapper;
+import com.mengde.clouddrive.upload.UploadSessionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,10 +28,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class DocumentUploadHttpContractTest {
     private static final Path ROOT = Path.of("target/day17-upload-test-storage");
     @Autowired TestRestTemplate rest; @Autowired DriveEntryRepository entries; @Autowired UserAccountMapper users;
+    @Autowired FileShareMapper shares; @Autowired UploadSessionRepository sessions;
 
     @BeforeEach @AfterEach
     void cleanFixtures() throws IOException {
-        entries.deleteAll(); users.deleteAll();
+        shares.deleteAll(); sessions.deleteAll(); entries.deleteAll(); users.deleteAll();
         if (Files.exists(ROOT)) try (var paths = Files.walk(ROOT)) {
             paths.sorted(Comparator.reverseOrder()).forEach(path -> { try { Files.deleteIfExists(path); } catch (IOException e) { throw new RuntimeException(e); } });
         }

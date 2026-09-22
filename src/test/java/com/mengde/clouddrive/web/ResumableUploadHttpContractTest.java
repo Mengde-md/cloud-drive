@@ -3,6 +3,7 @@ package com.mengde.clouddrive.web;
 import com.mengde.clouddrive.auth.AuthController;
 import com.mengde.clouddrive.auth.UserAccountMapper;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import com.mengde.clouddrive.persistence.FileShareMapper;
 import com.mengde.clouddrive.upload.UploadSessionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,9 +47,11 @@ class ResumableUploadHttpContractTest {
     @Autowired UploadSessionRepository sessions;
     @Autowired DriveEntryRepository entries;
     @Autowired UserAccountMapper users;
+    @Autowired FileShareMapper shares;
 
     @BeforeEach @AfterEach
     void cleanFixtures() throws IOException {
+        shares.deleteAll();
         sessions.deleteAll();
         entries.deleteAll();
         users.deleteAll();

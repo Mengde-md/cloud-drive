@@ -3,7 +3,10 @@ package com.mengde.clouddrive.web;
 import com.mengde.clouddrive.auth.AuthController;
 import com.mengde.clouddrive.auth.UserAccountMapper;
 import com.mengde.clouddrive.persistence.DriveEntryRepository;
+import com.mengde.clouddrive.persistence.FileShareMapper;
+import com.mengde.clouddrive.upload.UploadSessionRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,7 +25,13 @@ import static org.junit.jupiter.api.Assertions.*;
         })
 class TrashHttpContractTest {
  @Autowired TestRestTemplate rest; @Autowired DriveEntryRepository entries; @Autowired UserAccountMapper users;
- @AfterEach void clean(){ entries.deleteAll(); users.deleteAll(); }
+ @Autowired FileShareMapper shares; @Autowired UploadSessionRepository sessions;
+ // FK-safe, self-healing cleanup: shares -> sessions -> entries -> users, both
+ // before and after each test. This is a real persistent MySQL database shared
+ // across the whole mvn test run (and across separate runs), so any earlier
+ // class/run that left rows behind must not be able to break this class, and
+ // this class must not be able to leave rows behind for the next one.
+ @BeforeEach @AfterEach void clean(){ shares.deleteAll(); sessions.deleteAll(); entries.deleteAll(); users.deleteAll(); }
  @Test void ownerCanTrashPageRestoreAndPurgeWithoutExposingAnotherOwner(){
   Session a=session("trash-a"+System.nanoTime()), b=session("trash-b"+System.nanoTime());
   long id=((Number)rest.postForEntity("/api/entries",new HttpEntity<>("{\"displayName\":\"gone\",\"kind\":\"DOCUMENT\",\"byteSize\":1}",a.h),Map.class).getBody().get("id")).longValue();

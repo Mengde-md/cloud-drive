@@ -46,6 +46,42 @@ services:
       timeout: 5s
       retries: 10
 
+  # Day24: 注册中心 + 配置中心。
+  #
+  # 用 standalone + embedded 存储（Derby），不接 MySQL：本仓库是学习环境，Nacos 的
+  # 数据持久化不是本日要证明的能力，接 MySQL 反而会把"Nacos 起不来"和"Nacos 连不上
+  # 业务库"两类故障混在一起。生产环境必须换成 MySQL 存储并做集群，这一点写在
+  # docs/architecture/day24-gateway-and-config.md 的局限性一节。
+  #
+  # 鉴权默认开启（NACOS_AUTH_ENABLE=true）：关掉鉴权的 Nacos 等于把配置中心裸奔在
+  # 网络上，任何人都能改线上配置，这是真实事故的常见来源。identity/token 全部来自
+  # deploy/.env，compose 文件里没有任何真实口令。
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: clouddrive-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_TOKEN: ${CLOUDDRIVE_NACOS_AUTH_TOKEN:?set CLOUDDRIVE_NACOS_AUTH_TOKEN in deploy/.env (base64, >= 32 bytes)}
+      NACOS_AUTH_IDENTITY_KEY: ${CLOUDDRIVE_NACOS_IDENTITY_KEY:?set CLOUDDRIVE_NACOS_IDENTITY_KEY in deploy/.env}
+      NACOS_AUTH_IDENTITY_VALUE: ${CLOUDDRIVE_NACOS_IDENTITY_VALUE:?set CLOUDDRIVE_NACOS_IDENTITY_VALUE in deploy/.env}
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+    ports:
+      # 8848 = 控制台与 OpenAPI；9848 = 2.x 的 gRPC 客户端端口，少映射这一个的表现是
+      # 控制台能打开、但客户端注册一直超时，是 Nacos 2.x 最常见的踩坑点。
+      - "${CLOUDDRIVE_NACOS_PORT:-8848}:8848"
+      - "${CLOUDDRIVE_NACOS_GRPC_PORT:-9848}:9848"
+    volumes:
+      - clouddrive-nacos-data:/home/nacos/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
 volumes:
   clouddrive-mysql-data:
   clouddrive-redis-data:
+  clouddrive-nacos-data:

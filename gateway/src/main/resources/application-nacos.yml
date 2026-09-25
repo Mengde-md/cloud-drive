@@ -1,0 +1,44 @@
+# Day24 真实形态：用 `--spring.profiles.active=nacos` 启动时才生效。
+#
+# 与默认形态的唯一区别是"后端地址从哪里来"：
+#   默认形态  uri: http://127.0.0.1:8080   —— 地址写死在配置里，换机器/扩容就要改配置重启
+#   nacos 形态 uri: lb://cloud-drive-app   —— 地址来自注册中心，实例上下线由发现机制感知
+# 路由表本身（几条路由、各自匹配什么路径）完全不变，变的只是解析地址的方式。
+
+spring:
+  config:
+    # optional: 前缀的含义：Nacos 上这个 dataId 还不存在时，应用照常启动而不是启动失败。
+    # 对学习仓库这是必要的——第一次起 Nacos 时上面一条配置都没有。
+    import:
+      - optional:nacos:${CLOUDDRIVE_GATEWAY_APP_NAME:cloud-drive-gateway}.yaml
+
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: ${CLOUDDRIVE_NACOS_SERVER_ADDR:127.0.0.1:8848}
+        username: ${CLOUDDRIVE_NACOS_USERNAME:}
+        password: ${CLOUDDRIVE_NACOS_PASSWORD:}
+        # 配置隔离的第一层：namespace 区分环境（dev/test/prod 各一个 namespace id）。
+        # 不同 namespace 之间服务列表与配置互相不可见，这是比"名字加前缀"更硬的隔离。
+        namespace: ${CLOUDDRIVE_NACOS_NAMESPACE:}
+        # 第二层：group 区分同一环境内的业务域。
+        group: ${CLOUDDRIVE_NACOS_GROUP:CLOUDDRIVE_GROUP}
+      config:
+        enabled: true
+        server-addr: ${CLOUDDRIVE_NACOS_SERVER_ADDR:127.0.0.1:8848}
+        username: ${CLOUDDRIVE_NACOS_USERNAME:}
+        password: ${CLOUDDRIVE_NACOS_PASSWORD:}
+        namespace: ${CLOUDDRIVE_NACOS_NAMESPACE:}
+        group: ${CLOUDDRIVE_NACOS_GROUP:CLOUDDRIVE_GROUP}
+        file-extension: yaml
+        # 允许 Nacos 上改了配置后不重启生效。注意：能热刷新的只有被 @RefreshScope 或
+        # 配置绑定持有的值，server.port 这类启动期一次性读取的属性改了也不会生效。
+        refresh-enabled: true
+
+clouddrive:
+  gateway:
+    # 服务名必须与单体进程在 nacos profile 下注册的 spring.application.name 一致。
+    auth-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}
+    user-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}
+    file-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}

@@ -1,0 +1,94 @@
+server:
+  port: ${CLOUDDRIVE_GATEWAY_PORT:9000}
+
+spring:
+  application:
+    # 这个名字同时是 Nacos 上的服务名与配置 dataId 前缀，必须与 deploy/.env 中的
+    # CLOUDDRIVE_GATEWAY_APP_NAME 保持一致，否则注册上去的实例名与配置查不到同一处。
+    name: ${CLOUDDRIVE_GATEWAY_APP_NAME:cloud-drive-gateway}
+  main:
+    web-application-type: reactive
+
+  cloud:
+    nacos:
+      # Day24 默认形态：Nacos 全部关闭。
+      #
+      # 这样做不是因为 Nacos 可选，而是因为"构建与测试不应依赖一个必须先手工启动的
+      # 外部中间件"。默认关闭后，gateway 的路由表测试在任何机器上都能跑；真实的
+      # 注册发现走 `--spring.profiles.active=nacos`，由 deploy/docker-compose.yml
+      # 起的 Nacos 提供。
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        # spring-cloud-starter-alibaba-nacos-config 在 Spring Boot 3 下默认会检查
+        # 是否存在 spring.config.import=nacos:...，查不到就直接启动失败。默认形态
+        # 下我们没有这一项，所以必须显式关掉这个检查，否则连 mvn test 都起不来。
+        import-check:
+          enabled: false
+
+    gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 10s
+      default-filters:
+        # 让任何一次真实转发都能在响应头上看出"是网关转发的、走的哪条路由"，
+        # 手工验证与故障排查都靠它，不需要去翻日志。
+        - AddResponseHeader=X-CloudDrive-Gateway, day24
+      routes:
+        # 路由 id 按 Day23《day23-service-boundaries.md》定下的四个未来服务命名，
+        # 而不是按今天的进程数命名。今天四条的 uri 是同一个地址；Day25 拆出
+        # auth-service 后只改 auth-service-route 一条的 uri，其余三条不动。
+        - id: auth-service-route
+          uri: ${clouddrive.gateway.auth-uri}
+          predicates:
+            - Path=/api/auth/**
+
+        - id: user-service-route
+          uri: ${clouddrive.gateway.user-uri}
+          predicates:
+            - Path=/api/entries/**
+
+        - id: file-service-route
+          uri: ${clouddrive.gateway.file-uri}
+          predicates:
+            - Path=/api/files/**,/api/upload-sessions/**
+
+        - id: share-service-route
+          uri: ${clouddrive.gateway.file-uri}
+          predicates:
+            - Path=/api/shares/**
+
+        - id: api-docs-route
+          uri: ${clouddrive.gateway.user-uri}
+          predicates:
+            - Path=/v3/api-docs/**,/swagger-ui/**,/swagger-ui.html
+
+        - id: monolith-health-route
+          uri: ${clouddrive.gateway.user-uri}
+          predicates:
+            - Path=/backend-actuator/**
+          filters:
+            - StripPrefix=1
+
+clouddrive:
+  gateway:
+    # 默认形态（无 Nacos）：四条业务路由全部指向本机单体进程的真实地址。
+    # 允许用环境变量覆盖，是为了让同一份 jar 在 compose 网络里也能直接跑。
+    auth-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
+    user-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
+    file-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # gateway 端点用于查看网关自己解析出来的真实路由表，是本日手工验收的证据来源。
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO

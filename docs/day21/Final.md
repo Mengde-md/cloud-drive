@@ -44,17 +44,17 @@ Day20 的 `PrivateEntryMetadataCache` 只缓存 owner 私有 metadata，创建�
 | 前日衔接和真实问题 | 第 1-3 节从 Day20 缓存、Day17 对象补偿、Day18 单机幂等推导跨节点竞争 | 通过 |
 | 项目源码走读 | 第 6-11 节逐段走读协调器、释放、两条 Day17 写路径、两条 Day18 写路径、limiter 与 controller | 通过 |
 | 项目测试走读和测试矩阵 | 第 12-13 节解释真实 Redis 测试并列出旧 HTTP 回归与全量矩阵 | 通过 |
-| Debug | 第 14-19 节覆盖锁键过粗、漏解锁、lease 过短、JVM 限流、混桶、误删 DB 约束与事务提交窗口七类问题 | 通过 |
-| 阶段题 | 第 22 节包含算法滑动窗口、SQL 联合唯一索引、Java 锁语义题 | 通过 |
-| 面试与独立复刻 | 第 20-21 节包含复刻任务、简历表达和五个追问 | 通过 |
-| 运行证据 | 第 13、23 节记录专属 2 项和全量 89 项测试、实际 Maven 命令 | 通过 |
-| 篇幅与资产密度 | 教材 688 行、15,523 字符；内联真实新增核心代码、测试结构、失败链和阶段题，无占位内容 | 通过（650-799 例外按真实资产覆盖） |
+| Debug | Debug 一至七与第 14–18 节覆盖锁键过粗、漏解锁、lease 过短、JVM 限流、混桶、误删 DB 约束与事务提交窗口七类问题 | 通过 |
+| 阶段题 | 第 18、21 节包含算法滑动窗口、SQL 联合唯一索引、Java 锁语义题 | 通过 |
+| 面试与独立复刻 | 第 19–20 节包含复刻任务、简历表达和五个追问 | 通过 |
+| 运行证据 | 第 13、22 节记录专属 2 项和全量 89 项测试、实际 Maven 命令 | 通过 |
+| 篇幅与资产密度 | 教材 651 行、24,798 字符；新增请求时序、真实 Redis 测试边界、故障演练模板、HTTP 合同缺口和 limiter 完整走读；无占位内容 | 通过（650–799 例外按真实资产覆盖） |
 
 本表已按教材、生产源码和测试源码重新核对；不代表用户已完成口述、闭卷复刻、错因记录或阶段题学习门。
 
 ### 文档同步复审 2026 09 18
 
-本次以 `f739f09` 历史实现为依据，重读 `UploadCoordination`、`UploadRequestRateLimiter`、Day17/18 两个上传 application service 与 `UploadCoordinationIntegrationTest`。专属 2 项测试真实覆盖同 session 锁竞争、释放后重获、同 owner 配额耗尽与不同 owner 隔离；全量 89 项回归仍是历史工程事实。`GlobalExceptionHandler` 已提供 409/429 映射，但本日没有直接对上传 HTTP 端点断言这两个状态。另确认锁的 try-with-resources 位于 `@Transactional` 目标方法体：资源关闭发生在 Spring 事务代理 commit 之前，所以锁只串行化方法体关键操作，不覆盖完整事务提交窗口；数据库约束、事务与补偿仍是最终事实来源。
+本次以 `f739f09` 历史实现为依据，重读 `UploadCoordination`、`UploadRequestRateLimiter`、Day17/18 两个上传 application service 与 `UploadCoordinationIntegrationTest`。专属 2 项测试真实覆盖同 session 锁竞争、释放后重获、同 owner 配额耗尽与不同 owner 隔离；全量 89 项回归仍是历史工程事实。`GlobalExceptionHandler` 已提供 409/429 映射，但本日没有直接对上传 HTTP 端点断言这两个状态。另确认锁的 try-with-resources 位于 `@Transactional` 目标方法体：资源关闭发生在 Spring 事务代理 commit 之前，所以锁只串行化方法体关键操作，不覆盖完整事务提交窗口；数据库约束、事务与补偿仍是最终事实来源。651 行处于 650–799 的例外区间：本轮已覆盖全部 Day21 新增生产类、两条跨日写路径、真实 Redis 测试与七类 Debug；继续重复 Day17/18 的完整源码或提前加入 Day22 能力不会增加学习价值。
 
 ## 面试题与追问
 

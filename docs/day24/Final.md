@@ -19,9 +19,9 @@ Day23 明确没有做、也禁止做的事，正是 Day24 的起点：没有任�
 
 - **真实问题**：
   1. 后端地址写死在调用方——Day25 拆出 auth-service 后，每拆一个服务就要改一次所有调用方；
-  2. 没有统一入口——鉴权/限流/链路标识没有统一落点，拆分后必然每个服务各写一份且口径不一；
+  2. 没有统一入口——鉴权/限流/链路标识缺少共同治理位置；Day24 先建入口，并未实施这些策略；
   3. 配置随进程复制——单体只有一份 `application.properties`，四个进程就是四份副本，
-     改一处漏三处是必然结果。
+     若缺少配置治理，容易出现漏改与版本漂移。
 
 - **唯一增量**：
   1. `gateway/`：独立的 Spring Cloud Gateway 进程（pom、启动类、`application.yml` 路由表、
@@ -65,8 +65,7 @@ Day23 明确没有做、也禁止做的事，正是 Day24 的起点：没有任�
   `user-service-route`（`/api/entries/**`）、`file-service-route`（`/api/files/**`、
   `/api/upload-sessions/**`）、`share-service-route`（`/api/shares/**`）与
   `docs/architecture/day23-service-boundaries.md` 第 2 节的四服务归属表逐条对应；
-  `/api/shares/**` 单独成一条的原因是它是唯一允许匿名访问的业务路径
-  （`SecurityConfiguration` 中 `/api/shares/*/download` 为 `permitAll`），将来限流策略与其余不同。
+  `/api/shares/**` 单独成一条便于后续独立治理，但这条路径中既有受保护的分享管理接口，也有允许匿名的 `/api/shares/*/download`；不能把整条路由称为匿名或声称 Day24 已实施限流。
   `monolith-health-route` 用 `/backend-actuator/**` + `StripPrefix=1`，避免与网关自身
   `/actuator` 端点冲突。
 - 默认形态下三个 `clouddrive.gateway.*-uri` 属性解析为 `http://127.0.0.1:8080`；
@@ -117,33 +116,13 @@ BUILD FAILURE。按总纲第 4 节第 4 条"构建失败先自证（环境问题
   `@SpringBootTest(properties = {...})` 显式传入了所需值。改变这一现状会影响全部既有测试，
   不属于 Day24 唯一增量，留待后续单独评估。
 
-## 测试与验收（诚实披露：本 Day 编译/回归执行环境限制）
+## 测试与验收（区分原始记录、补测和未覆盖项）
 
-本次 Day24 的代码与文档改动是在**没有 JDK 17 / Maven / Docker 的沙箱环境**中完成的，
-沙箱无法执行任何构建或容器命令，**因此本 Day 未能在当前会话中执行 `mvn clean test`、
-`mvn -f gateway/pom.xml clean test`、`docker compose up` 或 `verify_day.ps1 -DayNN 24`**。
+Day24 初次开发时的记录写明，当时的沙箱未完成最终构建；上节 94/2/43 是更早一次真实失败，并非最终结果。2026-09-29 本次文档复审从 `2ef3ace` 建立隔离检出，避免正在开发的 Day25 未提交文件进入 Day24 测试范围。第一次直接在含中文的绝对路径下运行根工程 `clean test`，主源码编译成功，测试源码编译却出现“找不到”已生成主类的错误；核对 `build-output/classes` 中类确实存在后，在同一 PowerShell 进程用临时 `subst X:` 映射该检出，执行完立即移除映射。该环境路径问题未通过修改工程源码规避。
 
-与 Day23 不同的是，本日新增了两个外部依赖（Spring Cloud / Spring Cloud Alibaba BOM 与
-springdoc），这些构件此前不在 `C:\Environment\m2repo` 中，首次构建需要联网下载；
-并且本日新增了一个独立 Maven 工程，其构建**不在**根 pom 的 `mvn clean test` 范围内。
-因此本日必须由用户在其 Windows 机器上执行下列命令并留存真实输出：
+在上述隔离检出的 ASCII 盘符下，使用 `C:\Environment\maven\bin\mvn.cmd`、`C:\Environment\m2repo`、`C:\Environment\jdk-17` 和规定的 `JAVA_TOOL_OPTIONS` 执行根工程 `clean test`：**Tests run: 95, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS**。随后单独执行 `gateway/` 的 `clean test`：**Tests run: 8, Failures: 0, Errors: 0, Skipped: 0；BUILD SUCCESS**。网关不在根 pom 构建范围内，故两条结果必须分别记录。
 
-1. `mvn -f <repo>\pom.xml -Dmaven.repo.local=C:\Environment\m2repo clean test`
-   —— 验证新增依赖与三行 Nacos 开关没有破坏原有 90 项回归（预期变为 95 项：新增
-   `NacosDefaultsOffContractTest` 的 5 项）。
-2. `mvn -f <repo>\gateway\pom.xml -Dmaven.repo.local=C:\Environment\m2repo clean test`
-   —— 验证网关工程可编译，且 8 项路由表契约测试全绿。
-3. `powershell -ExecutionPolicy Bypass -File verify_day.ps1 -DayNN 24` —— 需全部 12 项 PASS。
-4. 手工验收（真实转发与真实注册，自动化测试不覆盖）：
-   起 `docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d`，
-   分别以默认形态与 `--spring.profiles.active=nacos` 启动单体与网关，
-   用 `curl -i http://127.0.0.1:9000/api/auth/login` 验证响应头出现 `X-CloudDrive-Gateway: day24`，
-   在 Nacos 控制台确认 `cloud-drive-app` 与 `cloud-drive-gateway` 两个服务出现在
-   指定 namespace/group 下。具体步骤见教材第 12 节。
-
-在收到第 1–3 项的真实命令输出并且全部通过之前，Day24 的工程交付**不能**被认定为已验收，
-这与项目"绝不凭 claim 认定完成"的红线一致；本文档在此明确不做超出实际验证范围的断言。
-第 4 项属于手工证据，未完成前不得声称"网关真的转发成功"或"服务真的注册成功"。
+这些结果证明 Day24 提交快照的两套自动化测试通过，不证明真实 HTTP 转发、Nacos 注册或远端配置刷新。`verify_day.ps1` 将仓库路径硬编码为当前主检出，而当前主检出含用户未提交的 Day25 工作，不能把它的结果冒充隔离 Day24 快照的 12/12 PASS；本次未取得针对 Day24 干净状态的 12/12 回执。真实联调仍按教材第 12 节执行并保留请求、响应、网关日志和 Nacos 实例证据；`deploy/.env` 只供 Compose 插值，不会自动注入另行启动的 Maven 进程。
 
 ## 面试题与真实问题映射
 
@@ -160,11 +139,10 @@ springdoc），这些构件此前不在 `C:\Environment\m2repo` 中，首次构�
 |---|---|---|
 | 前日衔接与问题 | 教材第 0-1 节从 Day23"边界只在纸上、调用方直连 8080"推导出地址硬编码、无统一横切点、配置随进程复制三个真实问题 | 通过 |
 | 项目源码走读 | 教材逐段走读本仓库 `gateway/application.yml` 六条路由、`application-nacos.yml` 与 `application-nacos.properties` 两份 profile、`pom.xml` 的 BOM 版本对齐、`SecurityConfiguration` 中与 api-docs 放行相关的 `anyRequest().permitAll()` | 通过 |
-| 项目测试走读 | 教材逐条走读 `GatewayRouteTableTest` 8 项与 `NacosDefaultsOffContractTest` 4 项断言，解释每一条断言防的是哪一类真实故障 | 通过 |
-| Debug/故障排障 | 教材设 5 个独立 Debug 小节：import-check 导致全量测试启动失败、9848 端口未映射导致注册超时、namespace 填名称而非 id 导致配置静默不生效、StripPrefix 缺失导致 actuator 404、热更新改数据源密码不生效 | 通过 |
+| 项目测试走读 | 教材走读 `GatewayRouteTableTest` 8 项与 `NacosDefaultsOffContractTest` 5 项测试，解释配置与路由断言的故障防线；上述两套构建已在 Day24 隔离检出通过 | 通过 |
+| Debug/故障排障 | 教材设 5 个 Debug 小节：真实的 import-check 测试失败，以及 gRPC 端口、namespace 三元组、StripPrefix、刷新实验四类待实测场景；后四类不冒充本日已发生故障 | 通过 |
 | 独立复刻/实操 | 教材要求不看答案独立写出一条新路由（含 Path 谓词与 StripPrefix）并补一条对应断言，再独立画出 namespace/group/dataId 三层隔离图 | 通过 |
 | 面试与简历 | 教材第 13/14 节收录本日对应面试题清单与简历讲法示例 | 通过 |
 | 阶段题覆盖 | 教材含算法、SQL、Java 三类阶段巩固题，与本日入口治理主题结合命题 | 通过 |
 
-本表不代表用户已学会；用户仍需口述、闭卷复刻、记录错因并完成题单，且必须先在其 Windows
-机器上跑通上述第 1–3 项命令全部通过，工程交付才能被认定完成。
+本表不代表用户已学会；用户仍需口述、闭卷复刻、记录错因并完成题单。自动化构建已补测通过，官方工程门的干净状态 12/12 与真实跨进程联调仍缺证据，不能宣称 Day24 全面验收完成。

@@ -40,7 +40,7 @@ clouddrive:day20:owner:{ownerId}:entry:{entryId}
 ```powershell
 $env:JAVA_HOME = 'C:\Environment\jdk-17'
 $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=C:\Environment\cdl-java-sockets'
-& 'C:\Environment\maven\bin\mvn.cmd' -f 'C:\Users\惠普暗影精灵9\Documents\新建文件夹\cloud-drive-learning\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' '-Dtest=PrivateEntryMetadataCacheIntegrationTest,PrivateEntryCacheHttpContractTest' test
+& 'C:\Environment\maven\bin\mvn.cmd' -f '<repo>\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' '-Dtest=PrivateEntryMetadataCacheIntegrationTest,PrivateEntryCacheHttpContractTest' test
 ```
 
 真实结果：`Tests run: 5, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS`。
@@ -48,7 +48,7 @@ $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=C:\Environment\cdl-java-so
 全量回归命令：
 
 ```powershell
-& 'C:\Environment\maven\bin\mvn.cmd' -f 'C:\Users\惠普暗影精灵9\Documents\新建文件夹\cloud-drive-learning\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' clean test
+& 'C:\Environment\maven\bin\mvn.cmd' -f '<repo>\pom.xml' '-Dmaven.repo.local=C:\Environment\m2repo' clean test
 ```
 
 真实结果：`Tests run: 87, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS`。
@@ -69,13 +69,13 @@ $env:JAVA_TOOL_OPTIONS = '-Djdk.net.unixdomain.tmpdir=C:\Environment\cdl-java-so
 | 审计项 | 教材位置与证据 | 结论 |
 | --- | --- | --- |
 | 前日衔接和真实问题 | 第 1–2 节点名 Day19 私有条目、下载和分享边界，说明列表重复回源 | 通过 |
-| 项目源码走读 | 第 5–9 节逐段解释 `PrivateEntryMetadataCache`、Controller 与两条上传写路径 | 通过 |
-| 项目测试走读/测试矩阵 | 第 10–12 节走读 Redis 集成测试及真实 HTTP 合同测试 | 通过 |
+| 项目源码走读 | 第 4–7、20 节逐段解释 `PrivateEntryMetadataCache`、Controller 与两条上传写路径 | 通过 |
+| 项目测试走读/测试矩阵 | 第 9–12、17 节走读 Redis 集成测试及真实 HTTP 合同测试 | 通过 |
 | Debug | 第 13 节六类故障：键污染、损坏 JSON、Redis 不可达、漏失效、缓存字节、错误双删 | 通过 |
 | 阶段题 | 第 15 节算法、SQL、Java 题及答案边界 | 通过 |
 | 面试与独立复刻 | 第 14、16 节包含项目表述、追问与闭卷复刻任务 | 通过 |
 | 运行证据 | 第 12、17 节记录专属 5 项、全量 87 项测试及验收命令 | 通过 |
-| 篇幅与段落密度 | 教材 690 行、30,698 字符；逐段复读前日衔接、生产源码、项目测试、六个 Debug 和阶段题，无逐句拆行填充 | 通过（650–799 例外已逐项覆盖真实资产） |
+| 篇幅与段落密度 | 教材 692 行、30,972 字符；逐段复读前日衔接、生产源码、项目测试、六个 Debug 和阶段题，无逐句拆行填充 | 通过（650–799 例外已逐项覆盖真实资产） |
 
 本表已按教材、项目源码与项目测试重新对照；它不代表用户已经完成口述或闭卷复刻。
 

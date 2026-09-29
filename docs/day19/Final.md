@@ -28,11 +28,20 @@ V6 创建 `file_shares`，保存 token、document_id、owner_id、BCrypt passcod
 
 代码提交：`0e5098b feat(day19): add range download and passcode shares`。
 
-Day19 自身测试：`mvn -Dtest=FileDeliveryServiceTest,FileDeliveryHttpContractTest test` 通过，退出码 0。全量回归和发布脚本将在文档完成后运行。
+Day19 专属测试 `mvn -Dtest=FileDeliveryServiceTest,FileDeliveryHttpContractTest test` 已通过，退出码 0。发布回执记录的历史工程门为全量 `mvn clean test` 通过，以及 `verify_day.ps1 -DayNN 19` 的 `12/12 PASS, 0/12 FAIL`；本次仅返工教材与交付文档，没有把历史运行结果伪装成新的执行结果。
 
 ## 教材自审
 
-Day02 的问题→职责→测试闭环：教材从 Day18“对象已写但不能读”出发，分别走读存储接口、Range 解析、分享校验和测试断言。Day05 的失败证据门：错误提取码、过期、越界 Range、多 Range 与分享外键夹具冲突均有明确证据。项目源码为 `LocalObjectStorage`、`FileDeliveryService`、`FileDeliveryController`；项目测试为 `FileDeliveryServiceTest` 与 `FileDeliveryHttpContractTest`。教材使用自然段、完整协议表和真实源码/测试，不以单句换行制造物理行数。
+| 审计项 | 教材位置与真实证据 | 结论 |
+| --- | --- | --- |
+| 前日衔接和真实问题 | 开头、第 1、11 节：Day18 最终对象尚无受控读取入口 | 通过 |
+| 项目源码走读 | 第 2–4、12–13、18–20、26–27、35–37 节：`ObjectStorage`、`LocalObjectStorage`、`FileDeliveryService`、Controller、Security 与 Mapper | 通过 |
+| 项目测试走读和测试矩阵 | 第 5、14、21、28、46–47 节：`FileDeliveryServiceTest`、`FileDeliveryHttpContractTest`、夹具清理 | 通过 |
+| Debug 与故障演练 | Debug 1–8、第 29、38 节：公开路径、Range 解析、owner 条件、外键和分享过期边界 | 通过 |
+| 阶段题、面试与独立复刻 | 第 10、15–16、23–24、31、39、44–45、49 节 | 通过 |
+| 篇幅与结构 | 825 行、39,546 字符；提前的 Checklist/自审已改为预测与覆盖图，唯一“明日输入”位于全文末尾 | 通过 |
+
+Day02 的问题→职责→测试闭环和 Day05 的失败证据门在本次复读中均已对照真实文件。825 行来自完整源码、测试、Debug、协议与复刻材料，而不是逐句拆行或重复追加；工程/教材交付仍不等于用户已经完成口述或闭卷复刻。
 
 ### 文档同步复审 2026 09 18
 

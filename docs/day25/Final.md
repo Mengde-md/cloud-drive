@@ -145,8 +145,8 @@ POM 或系统环境变量。
 内部身份端点还缺少显式 `@PathVariable("id")`。修复后下列前三项均已通过：
 
 1. `mvn -f <repo>\pom.xml "-Dmaven.repo.local=C:\Environment\m2repo" clean test`
-   —— 实测 `Tests run: 100, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS。
-   旧记录的 108 是以 Day24 文档中的 95 为基数推导，实际当前测试集为 100；以真实运行结果为准。
+   —— 实测 `Tests run: 108, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS。
+   先前读取构建尚未结束时的中间 Surefire 汇总得到 100；完整报告以 108 为准。
 2. `mvn -f <repo>\gateway\pom.xml "-Dmaven.repo.local=C:\Environment\m2repo" clean test`
    —— 实测 `Tests run: 19, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS（Day24 的 8 项改写并新增 1 项 = 9，
    加 `GatewayAuthenticationFilterTest` 10 项）。

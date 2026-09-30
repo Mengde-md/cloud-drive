@@ -154,7 +154,8 @@ POM 或系统环境变量。
    —— 实测 `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS（`AuthServiceHttpContractTest` 8、
    `JwtMonolithCompatibilityTest` 6）。这一组**不依赖 MySQL 与 Nacos**，
    设计上应在任何一台机器上都能跑通。
-4. `powershell -ExecutionPolicy Bypass -File verify_day.ps1 -DayNN 25` —— 需 12/12 PASS。
+4. `powershell -ExecutionPolicy Bypass -File verify_day.ps1 -DayNN 25` —— 2026-09-30 实测 12/12 PASS，
+   Verdict: `Day25 ENGINEERING ACCEPTED`。
    注意该脚本第 6 项只跑**根 pom**，gateway 与 auth-service 不在其覆盖范围内，
    第 2、3 条命令的输出是这两个工程唯一的证据来源。
 5. 手工验收（真实跨进程转发，自动化测试不覆盖）：
@@ -172,12 +173,12 @@ POM 或系统环境变量。
    `cloud-drive-app`、`cloud-drive-auth`、`cloud-drive-gateway` 三个服务出现在同一
    namespace/group 下。
 
-第 4 项工程门与第 5 项手工证据尚未执行；在它们全部通过前，Day25 的工程交付**不能**被认定为已验收。
-这与项目"绝不凭 claim 认定完成"的红线一致。手工证据未完成前不得声称
+第 4 项工程门已通过；第 5 项手工证据尚未执行。手工证据未完成前不得声称
 "网关真的把 /api/auth/** 转发到了 auth-service"或"服务真的注册成功"。
 
 另需注意：**Day24 的工程门本身尚未 12/12 PASS**（第 1、2 项待提交）。
-按总纲第 4 节第 2 条，Day24 的工程交付在那之前也不成立。
+按总纲第 4 节第 2 条，Day24 的工程交付在那之前也不成立。Day25 的工程门通过不替代
+真实跨进程联调、教材人工复读或用户学习门。
 
 ## 面试题与真实问题映射
 

@@ -38,7 +38,8 @@ spring:
 
 clouddrive:
   gateway:
-    # 服务名必须与单体进程在 nacos profile 下注册的 spring.application.name 一致。
-    auth-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}
+    # 服务名必须与各进程在 nacos profile 下注册的 spring.application.name 一致。
+    # Day25 起 auth 指向独立服务名 cloud-drive-auth，另外两个仍是单体 cloud-drive-app。
+    auth-uri: lb://${CLOUDDRIVE_AUTH_APP_NAME:cloud-drive-auth}
     user-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}
     file-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}

@@ -39,6 +39,12 @@ spring:
         # 路由 id 按 Day23《day23-service-boundaries.md》定下的四个未来服务命名，
         # 而不是按今天的进程数命名。今天四条的 uri 是同一个地址；Day25 拆出
         # auth-service 后只改 auth-service-route 一条的 uri，其余三条不动。
+        # Day25：这条路由的 uri 今天第一次真正指向另一个进程。
+        # 路由 id、Path 谓词一个字没改——Day24 按未来服务名命名路由的收益在这里兑现。
+        #
+        # 注意 Path 是 /api/auth/**，而 auth-service 上还挂着 /internal/**。
+        # /internal/** 不在任何一条路由的谓词里，所以它从网关**不可达**，
+        # 只能由集群内部直连。GatewayRouteTableTest 有一条断言专门钉死这一点。
         - id: auth-service-route
           uri: ${clouddrive.gateway.auth-uri}
           predicates:
@@ -72,12 +78,34 @@ spring:
             - StripPrefix=1
 
 clouddrive:
+  security:
+    jwt:
+      # Day25：网关验签用的密钥，必须与单体、auth-service 完全相同。
+      # 三个进程共享一把对称密钥是 HS256 的固有代价，已作为已知局限记录。
+      secret: ${CLOUDDRIVE_JWT_SECRET:}
+
   gateway:
-    # 默认形态（无 Nacos）：四条业务路由全部指向本机单体进程的真实地址。
-    # 允许用环境变量覆盖，是为了让同一份 jar 在 compose 网络里也能直接跑。
-    auth-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
+    # Day25 起 auth-uri 与另外两个**分道扬镳**：Day24 时三个属性解析出同一个地址，
+    # 今天 auth-uri 指向真正独立的 auth-service 进程（8081），
+    # user/file 仍指向单体（8080）。这一行的分叉就是"第一个可验证拆分"本身。
+    auth-uri: ${CLOUDDRIVE_AUTH_URI:http://127.0.0.1:8081}
     user-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
     file-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
+
+    authn:
+      # Day25：网关成为边缘验签点。默认开启——与 Nacos 那类"需要外部中间件才能用"的
+      # 开关不同，鉴权不依赖任何外部服务，默认关闭反而会让一个不安全的形态成为默认形态。
+      enabled: true
+      # 这份清单与单体 SecurityConfiguration 的 permitAll 集合逐条对应。
+      # GatewayAnonymousPathParityTest 会断言两边不漂移。
+      anonymous:
+        - /api/auth/register
+        - /api/auth/login
+        - /api/shares/*/download
+        - /actuator/**
+        - /v3/api-docs/**
+        - /swagger-ui/**
+        - /swagger-ui.html
 
 management:
   endpoints:

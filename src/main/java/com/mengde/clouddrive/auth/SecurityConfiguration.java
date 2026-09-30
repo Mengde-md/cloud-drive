@@ -7,6 +7,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,7 @@ import java.time.Duration;
 import java.util.stream.Collectors;
 
 @Configuration @EnableWebSecurity
+@EnableConfigurationProperties(GatewayTrustProperties.class)
 public class SecurityConfiguration {
     @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
     @Bean Duration jwtTtl(@Value("${clouddrive.security.jwt.ttl:30m}") Duration ttl) { return ttl; }
@@ -43,14 +45,19 @@ public class SecurityConfiguration {
     }
     @Bean JwtEncoder jwtEncoder(SecretKey key) { return new NimbusJwtEncoder(new ImmutableSecret<SecurityContext>(key)); }
     @Bean JwtDecoder jwtDecoder(SecretKey key) { NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build(); decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer("cloud-drive-learning")); return decoder; }
-    @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, JsonAuthFailureHandler failures) throws Exception {
+    @Bean SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, TrustedGatewayHeaderAuthenticationFilter gatewayFilter, JsonAuthFailureHandler failures) throws Exception {
         return http.csrf(csrf -> csrf.disable()).httpBasic(basic -> basic.disable()).formLogin(form -> form.disable()).sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a.requestMatchers("/api/auth/register", "/api/auth/login", "/api/shares/*/download").permitAll().requestMatchers("/api/auth/me", "/api/entries", "/api/entries/**", "/api/files", "/api/files/**", "/api/upload-sessions", "/api/upload-sessions/**", "/api/shares").authenticated().anyRequest().permitAll())
                 .exceptionHandling(e -> e.authenticationEntryPoint(failures).accessDeniedHandler(failures))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class).build();
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                // Day25：排在本地验签**之后**。默认形态下 GatewayTrustProperties.enabled=false，
+                // 这个过滤器第一行就放行，整条链的可观测行为与 Day24 完全一致。
+                .addFilterAfter(gatewayFilter, JwtAuthenticationFilter.class)
+                .build();
     }
     @Bean JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenService tokens, JsonAuthFailureHandler failures) { return new JwtAuthenticationFilter(tokens, failures); }
     @Bean JsonAuthFailureHandler jsonAuthFailureHandler(ObjectMapper mapper) { return new JsonAuthFailureHandler(mapper); }
+    @Bean TrustedGatewayHeaderAuthenticationFilter trustedGatewayHeaderAuthenticationFilter(GatewayTrustProperties properties) { return new TrustedGatewayHeaderAuthenticationFilter(properties); }
 
     static final class JwtAuthenticationFilter extends OncePerRequestFilter {
         private final JwtTokenService tokens; private final JsonAuthFailureHandler failures;

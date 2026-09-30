@@ -1,0 +1,27 @@
+# 测试专用配置。
+#
+# Day24 的教训（docs/day24/Final.md"本日真实构建失败与修复"）：src/test/resources 下
+# 与主配置**同名**的文件会在测试 classpath 上把主配置整个遮蔽掉，且没有任何警告。
+# 这里同名是**有意为之**——本服务的测试一律不连 MySQL、不连 Nacos，
+# 所以需要一份干净的、不含 datasource 的配置，而不是继承主配置再逐项覆盖。
+# 代价是主配置里任何新增项在测试中都不生效，新增"测试也必须生效"的配置时两份都要写。
+
+spring:
+  application:
+    name: cloud-drive-auth
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+
+clouddrive:
+  security:
+    jwt:
+      # 仅用于测试签名，不是任何环境的部署密钥。长度必须 >= 32 字节，
+      # 否则 jwtSecretKey Bean 在上下文启动阶段就抛 IllegalStateException。
+      secret: day25-test-only-signing-material-at-least-32-bytes
+      ttl: 30m

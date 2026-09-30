@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -32,9 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         classes = CloudDriveGatewayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                "clouddrive.gateway.auth-uri=http://127.0.0.1:18080",
+                // Day25：auth 与 user/file 用**不同**的端口，因为它们今天真的是不同进程。
+                // Day24 时这三个值故意写成同一个，那条断言已按下方注释改写。
+                "clouddrive.gateway.auth-uri=http://127.0.0.1:18081",
                 "clouddrive.gateway.user-uri=http://127.0.0.1:18080",
-                "clouddrive.gateway.file-uri=http://127.0.0.1:18080"
+                "clouddrive.gateway.file-uri=http://127.0.0.1:18080",
+                // Day25：网关新增 ReactiveJwtDecoder Bean，密钥不足 32 字节会在
+                // 上下文启动阶段抛 IllegalStateException，整组路由测试会以
+                // "Failed to load ApplicationContext" 的形式失败——根因离现象很远，
+                // 所以这一行是必需的，不是装饰。
+                "clouddrive.security.jwt.secret=day25-test-only-signing-material-at-least-32-bytes"
         })
 class GatewayRouteTableTest {
 
@@ -57,20 +65,49 @@ class GatewayRouteTableTest {
                 ids);
     }
 
+    /**
+     * Day25 改写。Day24 时这个方法叫 everyBusinessRouteStillPointsAtTheSameMonolithToday，
+     * 断言四条业务路由指向同一地址——那是"边界只在命名上"的真实状态。
+     * 今天 auth 真的是另一个进程了，所以断言必须跟着变：**断言的是拆分这件事本身**，
+     * 而不是放宽成"随便指哪都行"。原断言的最后一条（auth 与 file 相等）被反转为不相等，
+     * 这样将来若有人把 auth-uri 改回单体地址，这条会立刻红。
+     */
     @Test
-    void everyBusinessRouteStillPointsAtTheSameMonolithToday() {
+    void authRouteHasSplitAwayFromTheMonolithWhileTheOthersHaveNot() {
         Map<String, String> uris = routeLocator.getRoutes()
                 .collectMap(Route::getId, route -> route.getUri().toString())
                 .block();
 
         assertAll(
-                () -> assertEquals("http://127.0.0.1:18080", uris.get("auth-service-route")),
+                () -> assertEquals("http://127.0.0.1:18081", uris.get("auth-service-route")),
                 () -> assertEquals("http://127.0.0.1:18080", uris.get("user-service-route")),
                 () -> assertEquals("http://127.0.0.1:18080", uris.get("file-service-route")),
                 () -> assertEquals("http://127.0.0.1:18080", uris.get("share-service-route")),
-                // 今天四条业务路由指向同一个地址，是单体尚未拆分的真实状态；
-                // 路由 id 已经按未来边界命名，Day25 只需要改 auth-service-route 一条。
-                () -> assertEquals(uris.get("auth-service-route"), uris.get("file-service-route")));
+                () -> assertNotEquals(uris.get("auth-service-route"), uris.get("file-service-route"),
+                        "auth-service 已是独立进程，这两条路由不应再指向同一地址"),
+                // Day26 的前置事实：file 与 share 今天仍在同一个进程里。
+                () -> assertEquals(uris.get("file-service-route"), uris.get("share-service-route")));
+    }
+
+    /**
+     * Day25 新增。auth-service 上挂着 /internal/users/{id}/identity，它是给其它服务用的，
+     * 绝不能从公网入口可达。这条断言检查的是"没有任何一条路由的 Path 谓词会匹配
+     * /internal 开头的请求"——用路径匹配而不是字符串包含，因为 /**  这类通配也能命中。
+     */
+    @Test
+    void noRouteExposesTheInternalServiceToServiceApi() {
+        org.springframework.util.AntPathMatcher matcher = new org.springframework.util.AntPathMatcher();
+        List<String> allPaths = gatewayProperties.getRoutes().stream()
+                .flatMap(definition -> definition.getPredicates().stream())
+                .filter(predicate -> "Path".equals(predicate.getName()))
+                .flatMap(predicate -> predicate.getArgs().values().stream())
+                .collect(Collectors.toList());
+
+        List<String> leaking = allPaths.stream()
+                .filter(pattern -> matcher.match(pattern, "/internal/users/1/identity"))
+                .collect(Collectors.toList());
+
+        assertTrue(leaking.isEmpty(), "以下路由把内部接口暴露到了公网入口：" + leaking);
     }
 
     @Test

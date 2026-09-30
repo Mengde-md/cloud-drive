@@ -1,0 +1,52 @@
+server:
+  # 8081，与单体 8080、网关 9000 错开。三个端口写在 deploy/.env.example 里，
+  # 不在任何一处硬编码成"约定俗成"。
+  port: ${CLOUDDRIVE_AUTH_PORT:8081}
+
+spring:
+  application:
+    # Nacos 上的服务名与 dataId 前缀；网关 nacos 形态下 lb://${此名} 必须对得上。
+    name: ${CLOUDDRIVE_AUTH_APP_NAME:cloud-drive-auth}
+
+  datasource:
+    # 今天与单体共用同一个库同一张表。物理分库属于 user-service 的工作，本日不做。
+    url: ${CLOUDDRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+    username: ${CLOUDDRIVE_DB_USERNAME:root}
+    password: ${CLOUDDRIVE_DB_PASSWORD:}
+
+  # Flyway 由单体负责执行。两个进程都跑 migration 会在同一张 flyway_schema_history
+  # 上竞争，启动顺序稍有不同就会报 "Found non-empty schema without schema history table"
+  # 或校验和冲突。迁移的所有权必须**恰好属于一个**部署单元。
+  flyway:
+    enabled: false
+
+  cloud:
+    nacos:
+      # 与 Day24 同一条纪律：依赖在 pom 里，默认全部关闭，测试不依赖外部中间件。
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+clouddrive:
+  security:
+    jwt:
+      # 与单体共用同一个对称密钥，否则 auth-service 签发的 token 单体验不过。
+      secret: ${CLOUDDRIVE_JWT_SECRET:}
+      ttl: 30m
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

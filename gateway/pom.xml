@@ -72,6 +72,20 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
+        <!--
+          Day25：网关要在边缘验签 JWT，需要 NimbusReactiveJwtDecoder。
+          这里**刻意只引 spring-security-oauth2-jose，而不是 spring-boot-starter-security
+          或 spring-boot-starter-oauth2-resource-server**。原因：后两者会带进
+          spring-security-web，触发 Boot 的 ReactiveSecurityAutoConfiguration，
+          给网关自动装上一整条 WebFlux 安全过滤器链。那条链有它自己的默认规则
+          （比如默认拦截全部请求、默认开 CSRF），会与本日手写的 GlobalFilter 产生
+          两套互相不知情的鉴权逻辑——这是拆分期非常典型的"两处鉴权、行为由加载顺序决定"
+          故障源。只引 jose 拿到解码能力，鉴权决策全部留在一处看得见的代码里。
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>

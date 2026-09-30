@@ -175,6 +175,9 @@ POM 或系统环境变量。
 
 第 4 项工程门已通过；第 5 项手工证据尚未执行。手工证据未完成前不得声称
 "网关真的把 /api/auth/** 转发到了 auth-service"或"服务真的注册成功"。
+2026-09-30 已启动 Docker Desktop 并尝试 `docker compose up -d`，但 Docker Hub 拉取
+`mysql:8.0` 时在获取匿名 token 阶段发生 TLS handshake timeout，随后 Redis 与 Nacos 镜像
+均未启动；故本轮没有伪造三进程转发或 Nacos 注册结论。待镜像仓库可达后，从第 5 项继续。
 
 另需注意：**Day24 的工程门本身尚未 12/12 PASS**（第 1、2 项待提交）。
 按总纲第 4 节第 2 条，Day24 的工程交付在那之前也不成立。Day25 的工程门通过不替代

@@ -128,10 +128,14 @@ class AuthServiceHttpContractTest {
     }
 
     @Test
-    @DisplayName("/internal/** 不要求 JWT——它的保护靠网络层，这条弱点必须是显式可见的")
-    void internalIdentityIsReachableWithoutToken() throws Exception {
+    @DisplayName("/internal/** 需要服务间令牌，不能被匿名请求直接访问")
+    void internalIdentityRequiresServiceToken() throws Exception {
         given(service.identity(anyLong())).willReturn(row(9L, "carol", "USER"));
         mvc.perform(get("/internal/users/9/identity"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/internal/users/9/identity")
+                        .header(InternalServiceTokenFilter.HEADER_NAME,
+                                "day25-test-only-internal-token-at-least-32-bytes"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("carol"));
     }

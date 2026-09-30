@@ -40,7 +40,7 @@ JWT 校验仍在单体的 filter chain 里，每一个未来的服务都要各�
   3. 单体：`TrustedGatewayHeaderAuthenticationFilter` + `GatewayTrustProperties`，
      `clouddrive.gateway.trusted-headers.enabled` **默认 false**，
      两份同名 `application.properties` 都写（Day24 同名遮蔽的教训）。
-  4. 权限回归测试三组共 33 项新增断言（明细见下文"测试与验收"）。
+  4. 权限回归测试三组共 34 项新增断言（明细见下文"测试与验收"）。
   5. `docs/architecture/day25-auth-split-and-gateway-authn.md`：
      三进程职责切分、鉴权三步顺序及其安全依据、身份透传契约、信任模型、
      以及 7 条逐条列出的已知局限。
@@ -113,8 +113,9 @@ JWT 校验仍在单体的 filter chain 里，每一个未来的服务都要各�
    真实执行过；写出来只会得到一份看起来完整、实际从未跑通的编排文件。
    **直接后果**："只暴露网关端口"这个真实形态本日**搭不出来**，
    因此信任开关的开启只能做对照实验，不能当作安全结论。
-4. **`/internal/**` 没有服务间认证**，保护完全依赖网络层。今天端口在本机可达，
-   所以这是已知弱点而非已解决问题。
+4. **内部接口仍使用共享静态令牌。** `/internal/**` 现要求独立的
+   `CLOUDDRIVE_INTERNAL_SERVICE_TOKEN`，auth-service 默认只绑定 `127.0.0.1`；这消除了
+   匿名直连，但令牌轮换、密钥托管与 mTLS 仍未实现。
 5. **`user_account` 未真正拆分。** 更具体地说，单体的
    `DocumentUploadApplicationService`、`OwnedDriveEntryApplicationService`、
    `UploadSessionApplicationService` 三处仍在直接调 `lockQuotaById` 读 `quota_bytes`，
@@ -148,8 +149,8 @@ POM 或系统环境变量。
    —— 实测 `Tests run: 108, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS。
    先前读取构建尚未结束时的中间 Surefire 汇总得到 100；完整报告以 108 为准。
 2. `mvn -f <repo>\gateway\pom.xml "-Dmaven.repo.local=C:\Environment\m2repo" clean test`
-   —— 实测 `Tests run: 19, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS（Day24 的 8 项改写并新增 1 项 = 9，
-   加 `GatewayAuthenticationFilterTest` 10 项）。
+   —— 实测 `Tests run: 20, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS（Day24 的 8 项改写并新增 1 项 = 9，
+   加 `GatewayAuthenticationFilterTest` 11 项）。
 3. `mvn -f <repo>\auth-service\pom.xml "-Dmaven.repo.local=C:\Environment\m2repo" clean test`
    —— 实测 `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0`，BUILD SUCCESS（`AuthServiceHttpContractTest` 8、
    `JwtMonolithCompatibilityTest` 6）。这一组**不依赖 MySQL 与 Nacos**，
@@ -160,7 +161,8 @@ POM 或系统环境变量。
    第 2、3 条命令的输出是这两个工程唯一的证据来源。
 5. 手工验收（真实跨进程转发，自动化测试不覆盖）：
    起中间件 `docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d`；
-   分别启动单体（8080）、auth-service（8081）、网关（9000）；
+   在每个启动 Java 进程的 PowerShell 中先执行 `. .\deploy\Import-CloudDriveEnv.ps1`，
+   再分别启动单体（8080）、auth-service（8081）、网关（9000）；
    然后至少验证四件事——
    (a) `curl -i -X POST http://127.0.0.1:9000/api/auth/login -H "Content-Type: application/json" -d "{...}"`
    返回的响应头含 `X-CloudDrive-Gateway: day24`，且该请求**打到了 8081 而不是 8080**

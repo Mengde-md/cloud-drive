@@ -76,6 +76,7 @@ public class SecurityConfiguration {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             JwtAuthenticationFilter jwtFilter,
+                                            InternalServiceTokenFilter internalServiceTokenFilter,
                                             JsonAuthFailureHandler failures) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
@@ -85,15 +86,20 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        // /internal/** 不经网关、也不要求 JWT：它的保护依赖网络层
-                        // （不映射端口到公网 + 网关路由表不包含该前缀）。
-                        // 这是本日的**已知弱点**，Day26 接 Feign 时补服务间认证。
-                        .requestMatchers("/internal/**").permitAll()
+                        .requestMatchers("/internal/**").hasAuthority("ROLE_INTERNAL")
                         .requestMatchers("/api/auth/me").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(failures).accessDeniedHandler(failures))
+                .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    InternalServiceTokenFilter internalServiceTokenFilter(
+            @Value("${clouddrive.internal.service-token:}") String serviceToken,
+            JsonAuthFailureHandler failures) {
+        return new InternalServiceTokenFilter(serviceToken, failures);
     }
 
     @Bean
@@ -111,6 +117,11 @@ public class SecurityConfiguration {
         JwtAuthenticationFilter(JwtTokenService tokens, JsonAuthFailureHandler failures) {
             this.tokens = tokens;
             this.failures = failures;
+        }
+
+        @Override
+        protected boolean shouldNotFilter(HttpServletRequest request) {
+            return request.getRequestURI().startsWith("/internal/");
         }
 
         @Override

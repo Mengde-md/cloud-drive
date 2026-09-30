@@ -2,6 +2,9 @@ server:
   # 8081，与单体 8080、网关 9000 错开。三个端口写在 deploy/.env.example 里，
   # 不在任何一处硬编码成"约定俗成"。
   port: ${CLOUDDRIVE_AUTH_PORT:8081}
+  # Day25 修复：默认仅监听本机。部署到真实服务网络时可显式改为服务网卡地址，
+  # 但 /internal/** 仍要求内部令牌，不能把“端口可达”当成授权。
+  address: ${CLOUDDRIVE_AUTH_BIND_ADDRESS:127.0.0.1}
 
 spring:
   application:
@@ -35,6 +38,9 @@ mybatis:
     map-underscore-to-camel-case: true
 
 clouddrive:
+  internal:
+    # 给 Day26 Feign 调用准备的服务间令牌。不能与 JWT 密钥复用；缺失时服务拒绝启动。
+    service-token: ${CLOUDDRIVE_INTERNAL_SERVICE_TOKEN:}
   security:
     jwt:
       # 与单体共用同一个对称密钥，否则 auth-service 签发的 token 单体验不过。

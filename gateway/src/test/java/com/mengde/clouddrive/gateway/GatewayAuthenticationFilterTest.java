@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Day25 网关鉴权与身份透传的行为契约。
@@ -113,6 +114,19 @@ class GatewayAuthenticationFilterTest {
         String expired = token("cloud-drive-learning", 1L, "alice", "USER", Instant.now().minus(1, ChronoUnit.MINUTES));
         assertThat(statusOf(MockServerHttpRequest.get("/api/entries")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + expired).build())).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    @DisplayName("验签通过后的下游异常必须原样传播，不能被误写成 401")
+    void downstreamFailuresAreNotMappedToUnauthorized() {
+        MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/entries")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken()).build());
+
+        assertThatThrownBy(() -> filter().filter(exchange,
+                ignored -> Mono.error(new IllegalArgumentException("downstream unavailable"))).block())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("downstream unavailable");
+        assertThat(exchange.getResponse().getStatusCode()).isNull();
     }
 
     @Test

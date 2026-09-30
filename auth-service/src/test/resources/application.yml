@@ -19,6 +19,8 @@ spring:
           enabled: false
 
 clouddrive:
+  internal:
+    service-token: day25-test-only-internal-token-at-least-32-bytes
   security:
     jwt:
       # 仅用于测试签名，不是任何环境的部署密钥。长度必须 >= 32 字节，

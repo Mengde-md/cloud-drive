@@ -8,7 +8,8 @@ version: "3.9"
 #
 # The env var names match src/main/resources/application.properties exactly
 # (CLOUDDRIVE_DB_*, CLOUDDRIVE_REDIS_*) so the same .env file that drives this
-# compose file also drives the Spring Boot app when run locally.
+# compose file can be imported into each host PowerShell by
+# deploy/Import-CloudDriveEnv.ps1 before starting a Spring Boot app locally.
 
 services:
   mysql:

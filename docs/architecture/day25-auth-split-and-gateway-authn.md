@@ -138,9 +138,10 @@ auth-service 自己也仍然对 `/api/auth/me` 验签，理由相同：把"内�
    `UploadSessionApplicationService` 三处都在直接调 `lockQuotaById` 读 `quota_bytes`——
    按 Day23 的归属判定这是 user-service 的数据。这是一处**真实存在的跨边界读**，
    本日只记录不修复，它的解法（reserve/commit/release 三段式）已在 Day23 第 3.1 节设计好。
-4. **`/internal/**` 没有服务间认证。** 它的保护完全依赖网络层：网关路由表不包含该前缀
-   （`noRouteExposesTheInternalServiceToServiceApi` 断言了这一点），加上端口不对公网暴露。
-   端口今天在本机是可达的，所以这是一个**已知弱点**而不是已解决的问题。Day26 接 Feign 时补。
+4. **`/internal/**` 仍是共享静态令牌模型。** 路径不在网关路由表中，且请求还必须携带
+   `X-CloudDrive-Internal-Token`，其值来自独立的 `CLOUDDRIVE_INTERNAL_SERVICE_TOKEN`；
+   auth-service 默认仅绑定 `127.0.0.1`。这消除了匿名直连，但还没有令牌轮换、密钥托管或 mTLS，
+   Day26 的 Feign 调用必须复用该契约并补齐轮换策略。
 5. **三个 Java 进程未容器化。** `deploy/docker-compose.yml` 仍只编排中间件。
    因此"只暴露网关端口"这个真实形态在本日**无法真正搭出来**，信任开关的开启只能做对照实验，
    不能当作安全结论。

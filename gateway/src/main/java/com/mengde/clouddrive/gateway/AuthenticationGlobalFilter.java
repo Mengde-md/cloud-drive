@@ -83,15 +83,19 @@ public class AuthenticationGlobalFilter implements GlobalFilter, Ordered {
             return unauthorized(exchange, "authentication required or token invalid");
         }
 
+        // 只把 decoder 本身的错误翻译成 401。若把 onErrorResume 放在 flatMap 后面，
+        // 下游连接失败也会被误报成“token 无效”，掩盖真实的 5xx/网关故障。
         return decoder.decode(header.substring(7))
-                .flatMap(jwt -> chain.filter(withIdentity(stripped, jwt)))
                 .onErrorResume(JwtException.class, ex -> {
                     // 只记路径与异常类型，绝不记 token 本身——日志会被收集、被转发、被长期保存。
                     log.debug("gateway rejected token for path {}: {}", path, ex.getClass().getSimpleName());
-                    return unauthorized(exchange, "authentication required or token invalid");
+                    return unauthorized(exchange, "authentication required or token invalid")
+                            .then(Mono.<Jwt>empty());
                 })
                 .onErrorResume(IllegalArgumentException.class,
-                        ex -> unauthorized(exchange, "authentication required or token invalid"));
+                        ex -> unauthorized(exchange, "authentication required or token invalid")
+                                .then(Mono.<Jwt>empty()))
+                .flatMap(jwt -> chain.filter(withIdentity(stripped, jwt)));
     }
 
     private boolean isAnonymous(String path) {

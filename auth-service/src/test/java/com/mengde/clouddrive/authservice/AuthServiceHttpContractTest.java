@@ -139,4 +139,27 @@ class AuthServiceHttpContractTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("carol"));
     }
+
+    @Test
+    void invalidInternalTokenAndUserJwtCannotAccessInternalIdentity() throws Exception {
+        mvc.perform(get("/internal/users/9/identity")
+                        .header(InternalServiceTokenFilter.HEADER_NAME, "wrong-token"))
+                .andExpect(status().isUnauthorized());
+        String jwt = tokens.issue(row(9L, "carol", "USER")).value();
+        mvc.perform(get("/internal/users/9/identity").header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isUnauthorized());
+        org.mockito.Mockito.verifyNoInteractions(service);
+    }
+
+    @Test
+    void internalTokenDoesNotAuthorizePublicMeOrLeakToNextRequest() throws Exception {
+        given(service.identity(anyLong())).willReturn(row(9L, "carol", "USER"));
+        String internal = "day25-test-only-internal-token-at-least-32-bytes";
+        mvc.perform(get("/internal/users/9/identity")
+                        .header(InternalServiceTokenFilter.HEADER_NAME, internal))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/auth/me").header(InternalServiceTokenFilter.HEADER_NAME, internal))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(get("/internal/users/9/identity")).andExpect(status().isUnauthorized());
+    }
 }

@@ -10,6 +10,8 @@ spring:
     nacos:
       discovery:
         enabled: true
+        # Match the default loopback listener; remote deployments must set a reachable address.
+        ip: ${CLOUDDRIVE_AUTH_ADVERTISED_IP:127.0.0.1}
         server-addr: ${CLOUDDRIVE_NACOS_SERVER_ADDR:127.0.0.1:8848}
         username: ${CLOUDDRIVE_NACOS_USERNAME:}
         password: ${CLOUDDRIVE_NACOS_PASSWORD:}

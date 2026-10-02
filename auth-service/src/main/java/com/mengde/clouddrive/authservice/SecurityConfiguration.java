@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -110,6 +111,21 @@ public class SecurityConfiguration {
     @Bean
     JsonAuthFailureHandler jsonAuthFailureHandler(ObjectMapper mapper) { return new JsonAuthFailureHandler(mapper); }
 
+    // These filters belong only to Spring Security, not a second servlet-container chain.
+    @Bean
+    FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
+        var registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    FilterRegistrationBean<InternalServiceTokenFilter> internalFilterRegistration(InternalServiceTokenFilter filter) {
+        var registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
     static final class JwtAuthenticationFilter extends OncePerRequestFilter {
         private final JwtTokenService tokens;
         private final JsonAuthFailureHandler failures;
@@ -136,11 +152,12 @@ public class SecurityConfiguration {
                         .map(r -> new SimpleGrantedAuthority("ROLE_" + r)).collect(Collectors.toList());
                 SecurityContextHolder.getContext()
                         .setAuthentication(new UsernamePasswordAuthenticationToken(user, null, authorities));
-                chain.doFilter(req, res);
             } catch (JwtException | IllegalArgumentException ex) {
                 SecurityContextHolder.clearContext();
                 failures.write401(req, res);
+                return;
             }
+            chain.doFilter(req, res);
         }
     }
 

@@ -122,11 +122,11 @@ Day23 第 2.4 节原文是"下游服务信任网关传入的这两个头，不�
 auth-service 自己也仍然对 `/api/auth/me` 验签，理由相同：把"内网互信"当成
 "内网无需认证"，前提是先有内网边界。网关的验签是**前置快速失败**，不是替代。
 
-## 7. 本日已知局限（逐条，全部未解决）
+## 7. 本日已知局限与契约状态
 
 1. **两份 auth 代码并存。** 单体的 `com.mengde.clouddrive.auth` 与 auth-service 的
    `com.mengde.clouddrive.authservice` 是两套独立实现。单体那份仍然服务于 95 项既有回归
-   （它们全部通过本地 `/api/auth/login` 拿 token）。删掉它需要把这些测试改成跨进程调用，
+   （其中认证集成测试通过本地 `/api/auth/login` 拿 token）。删掉它需要调整这些测试的认证准备，
    那是 Feign 的范围，属于 Day26。**代价**：改 JWT claim 结构必须同时改两处，
    忘记一处的表现是"登录成功但后续请求 401"。`JwtMonolithCompatibilityTest`
    把 claim 结构当契约断言，就是为了让这种遗漏立刻变红。
@@ -149,8 +149,16 @@ auth-service 自己也仍然对 `/api/auth/me` 验签，理由相同：把"内�
    `gateway/pom.xml` 的注释曾写"真正的多模块重构属于 Day25"，本日**没有**做，
    理由写在 `auth-service/pom.xml` 的头部注释里（搬迁 `src/` 会淹没本日增量，
    并改变受保护脚本 `verify_day.ps1` 第 6 项的语义）。这条债务留给 Day26 一并评估。
-7. **Day23 设计文档与真实代码存在两处字段级不一致。** 文档写 `/api/auth/login` 返回
-   `{token, expiresIn}`、`/api/auth/me` 返回 `{id, username, role}`；Day15 起真实落地的是
-   `{accessToken, expiresAt}` 与 `{id, username, roles[]}`。auth-service 跟随**真实代码**，
-   因为跟随文档会破坏 Day23 自己写下的"零迁移成本"这条更根本的约束。
-   `AuthServiceHttpContractTest` 用两条 `doesNotExist` 断言把这个选择钉死。
+7. **接口契约需持续防漂移。** Day23 文档中的旧字段已校正；实际契约为
+   `{accessToken, expiresAt}` 与 `{id, username, roles[]}`。
+   `AuthServiceHttpContractTest` 保留两条 `doesNotExist` 断言，防止旧字段重新出现。
+
+## 8. 2026-10-02 自审修复
+
+auth-service 只在 JWT 验证阶段捕获认证异常，下游异常原样交给框架处理；两个安全过滤器
+禁用 Servlet 自动注册，避免在安全链之外重复执行。网关的错误恢复同样位于下游转发之前。
+内部令牌只能用于 `/internal/**`，用户 JWT 不能反向替代内部令牌，测试覆盖请求间上下文隔离。
+
+auth-service 默认监听与 Nacos 上报地址均为 `127.0.0.1`。跨主机时同时配置
+`CLOUDDRIVE_AUTH_BIND_ADDRESS` 与 `CLOUDDRIVE_AUTH_ADVERTISED_IP`，后者为可路由的
+具体地址，不能填 `0.0.0.0`。配置回归不等于真实注册验证；本轮 Nacos 受 Docker 启动失败阻塞。

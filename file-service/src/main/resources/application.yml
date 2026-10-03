@@ -1,0 +1,53 @@
+server:
+  port: ${CLOUDDRIVE_FILE_PORT:8082}
+  address: ${CLOUDDRIVE_FILE_BIND_ADDRESS:127.0.0.1}
+spring:
+  application:
+    name: ${CLOUDDRIVE_FILE_APP_NAME:cloud-drive-file}
+  datasource:
+    url: ${CLOUDDRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+    username: ${CLOUDDRIVE_DB_USERNAME:root}
+    password: ${CLOUDDRIVE_DB_PASSWORD:}
+  data:
+    redis:
+      host: ${CLOUDDRIVE_REDIS_HOST:127.0.0.1}
+      port: ${CLOUDDRIVE_REDIS_PORT:6379}
+      password: ${CLOUDDRIVE_REDIS_PASSWORD:}
+      timeout: 2s
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+    openfeign:
+      client:
+        config:
+          cloud-drive-auth:
+            url: ${CLOUDDRIVE_AUTH_URI:http://127.0.0.1:8081}
+            connectTimeout: 1000
+            readTimeout: 2000
+          cloud-drive-user:
+            url: ${CLOUDDRIVE_USER_URI:http://127.0.0.1:8083}
+            connectTimeout: 1000
+            readTimeout: 2000
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+clouddrive:
+  internal:
+    service-token: ${CLOUDDRIVE_INTERNAL_SERVICE_TOKEN:}
+  security:
+    jwt:
+      secret: ${CLOUDDRIVE_JWT_SECRET:}
+  storage:
+    root: ${CLOUDDRIVE_STORAGE_ROOT:../build-output/local-storage}
+  chunk-storage:
+    root: ${CLOUDDRIVE_CHUNKS_ROOT:../build-output/upload-chunks}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

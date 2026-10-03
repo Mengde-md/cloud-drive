@@ -1,0 +1,43 @@
+server:
+  port: ${CLOUDDRIVE_USER_PORT:8083}
+  address: ${CLOUDDRIVE_USER_BIND_ADDRESS:127.0.0.1}
+spring:
+  application:
+    name: ${CLOUDDRIVE_USER_APP_NAME:cloud-drive-user}
+  datasource:
+    url: ${CLOUDDRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
+    username: ${CLOUDDRIVE_DB_USERNAME:root}
+    password: ${CLOUDDRIVE_DB_PASSWORD:}
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+    table: flyway_schema_history_user
+    locations: classpath:db/migration
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+    openfeign:
+      client:
+        config:
+          cloud-drive-auth:
+            url: ${CLOUDDRIVE_AUTH_URI:http://127.0.0.1:8081}
+            connectTimeout: 1000
+            readTimeout: 2000
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+clouddrive:
+  internal:
+    service-token: ${CLOUDDRIVE_INTERNAL_SERVICE_TOKEN:}
+  quota:
+    default-bytes: ${CLOUDDRIVE_DEFAULT_QUOTA_BYTES:1073741824}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

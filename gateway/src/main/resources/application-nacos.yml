@@ -42,4 +42,4 @@ clouddrive:
     # Day25 起 auth 指向独立服务名 cloud-drive-auth，另外两个仍是单体 cloud-drive-app。
     auth-uri: lb://${CLOUDDRIVE_AUTH_APP_NAME:cloud-drive-auth}
     user-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}
-    file-uri: lb://${CLOUDDRIVE_APP_NAME:cloud-drive-app}
+    file-uri: lb://${CLOUDDRIVE_FILE_APP_NAME:cloud-drive-file}

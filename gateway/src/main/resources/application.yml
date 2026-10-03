@@ -30,17 +30,14 @@ spring:
     gateway:
       httpclient:
         connect-timeout: 2000
-        response-timeout: 10s
+        response-timeout: 30s
       default-filters:
         # 让任何一次真实转发都能在响应头上看出"是网关转发的、走的哪条路由"，
         # 手工验证与故障排查都靠它，不需要去翻日志。
         - AddResponseHeader=X-CloudDrive-Gateway, day24
       routes:
-        # 路由 id 按 Day23《day23-service-boundaries.md》定下的四个未来服务命名，
-        # 而不是按今天的进程数命名。今天四条的 uri 是同一个地址；Day25 拆出
-        # auth-service 后只改 auth-service-route 一条的 uri，其余三条不动。
-        # Day25：这条路由的 uri 今天第一次真正指向另一个进程。
-        # 路由 id、Path 谓词一个字没改——Day24 按未来服务名命名路由的收益在这里兑现。
+        # Day26: auth is independent; entries/files/shares and API docs belong to file-service.
+        # Keep the historical user-service-route id for compatibility; it does not expose quota APIs.
         #
         # 注意 Path 是 /api/auth/**，而 auth-service 上还挂着 /internal/**。
         # /internal/** 不在任何一条路由的谓词里，所以它从网关**不可达**，
@@ -51,7 +48,7 @@ spring:
             - Path=/api/auth/**
 
         - id: user-service-route
-          uri: ${clouddrive.gateway.user-uri}
+          uri: ${clouddrive.gateway.file-uri}
           predicates:
             - Path=/api/entries/**
 
@@ -66,7 +63,7 @@ spring:
             - Path=/api/shares/**
 
         - id: api-docs-route
-          uri: ${clouddrive.gateway.user-uri}
+          uri: ${clouddrive.gateway.file-uri}
           predicates:
             - Path=/v3/api-docs/**,/swagger-ui/**,/swagger-ui.html
 
@@ -80,17 +77,14 @@ spring:
 clouddrive:
   security:
     jwt:
-      # Day25：网关验签用的密钥，必须与单体、auth-service 完全相同。
-      # 三个进程共享一把对称密钥是 HS256 的固有代价，已作为已知局限记录。
+      # Shared HS256 material must match auth-service and file-service.
       secret: ${CLOUDDRIVE_JWT_SECRET:}
 
   gateway:
-    # Day25 起 auth-uri 与另外两个**分道扬镳**：Day24 时三个属性解析出同一个地址，
-    # 今天 auth-uri 指向真正独立的 auth-service 进程（8081），
-    # user/file 仍指向单体（8080）。这一行的分叉就是"第一个可验证拆分"本身。
+    # user-uri now remains only for the legacy monolith operational route.
     auth-uri: ${CLOUDDRIVE_AUTH_URI:http://127.0.0.1:8081}
     user-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
-    file-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}
+    file-uri: ${CLOUDDRIVE_FILE_URI:http://127.0.0.1:8082}
 
     authn:
       # Day25：网关成为边缘验签点。默认开启——与 Nacos 那类"需要外部中间件才能用"的

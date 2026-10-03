@@ -1,0 +1,26 @@
+spring:
+  config:
+    import: optional:nacos:${CLOUDDRIVE_USER_APP_NAME:cloud-drive-user}.yaml
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        ip: ${CLOUDDRIVE_USER_ADVERTISED_IP:127.0.0.1}
+        server-addr: ${CLOUDDRIVE_NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${CLOUDDRIVE_NACOS_NAMESPACE:}
+        group: ${CLOUDDRIVE_NACOS_GROUP:CLOUDDRIVE_GROUP}
+        username: ${CLOUDDRIVE_NACOS_USERNAME:}
+        password: ${CLOUDDRIVE_NACOS_PASSWORD:}
+      config:
+        enabled: true
+        server-addr: ${CLOUDDRIVE_NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${CLOUDDRIVE_NACOS_NAMESPACE:}
+        group: ${CLOUDDRIVE_NACOS_GROUP:CLOUDDRIVE_GROUP}
+        username: ${CLOUDDRIVE_NACOS_USERNAME:}
+        password: ${CLOUDDRIVE_NACOS_PASSWORD:}
+        file-extension: yaml
+    openfeign:
+      client:
+        config:
+          cloud-drive-auth:
+            url: ""

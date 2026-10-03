@@ -33,11 +33,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         classes = CloudDriveGatewayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
-                // Day25：auth 与 user/file 用**不同**的端口，因为它们今天真的是不同进程。
-                // Day24 时这三个值故意写成同一个，那条断言已按下方注释改写。
+                // Day26: auth/file are independent; the legacy health target remains separate.
                 "clouddrive.gateway.auth-uri=http://127.0.0.1:18081",
                 "clouddrive.gateway.user-uri=http://127.0.0.1:18080",
-                "clouddrive.gateway.file-uri=http://127.0.0.1:18080",
+                "clouddrive.gateway.file-uri=http://127.0.0.1:18082",
                 // Day25：网关新增 ReactiveJwtDecoder Bean，密钥不足 32 字节会在
                 // 上下文启动阶段抛 IllegalStateException，整组路由测试会以
                 // "Failed to load ApplicationContext" 的形式失败——根因离现象很远，
@@ -65,24 +64,20 @@ class GatewayRouteTableTest {
                 ids);
     }
 
-    /**
-     * Day25 改写。Day24 时这个方法叫 everyBusinessRouteStillPointsAtTheSameMonolithToday，
-     * 断言四条业务路由指向同一地址——那是"边界只在命名上"的真实状态。
-     * 今天 auth 真的是另一个进程了，所以断言必须跟着变：**断言的是拆分这件事本身**，
-     * 而不是放宽成"随便指哪都行"。原断言的最后一条（auth 与 file 相等）被反转为不相等，
-     * 这样将来若有人把 auth-uri 改回单体地址，这条会立刻红。
-     */
+    /** Day26: both business processes must remain independent of the legacy monolith. */
     @Test
-    void authRouteHasSplitAwayFromTheMonolithWhileTheOthersHaveNot() {
+    void authAndFileRoutesAreIndependentOfTheMonolith() {
         Map<String, String> uris = routeLocator.getRoutes()
                 .collectMap(Route::getId, route -> route.getUri().toString())
                 .block();
 
         assertAll(
                 () -> assertEquals("http://127.0.0.1:18081", uris.get("auth-service-route")),
-                () -> assertEquals("http://127.0.0.1:18080", uris.get("user-service-route")),
-                () -> assertEquals("http://127.0.0.1:18080", uris.get("file-service-route")),
-                () -> assertEquals("http://127.0.0.1:18080", uris.get("share-service-route")),
+                () -> assertEquals("http://127.0.0.1:18082", uris.get("user-service-route")),
+                () -> assertEquals("http://127.0.0.1:18082", uris.get("file-service-route")),
+                () -> assertEquals("http://127.0.0.1:18082", uris.get("share-service-route")),
+                () -> assertEquals("http://127.0.0.1:18082", uris.get("api-docs-route")),
+                () -> assertNotEquals(uris.get("file-service-route"), uris.get("monolith-health-route")),
                 () -> assertNotEquals(uris.get("auth-service-route"), uris.get("file-service-route"),
                         "auth-service 已是独立进程，这两条路由不应再指向同一地址"),
                 // Day26 的前置事实：file 与 share 今天仍在同一个进程里。

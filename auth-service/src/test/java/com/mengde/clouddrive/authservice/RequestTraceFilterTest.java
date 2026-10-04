@@ -69,4 +69,3 @@ class RequestTraceFilterTest {
         } finally { logger.detachAppender(captured); captured.stop(); MDC.clear(); }
     }
 }
-

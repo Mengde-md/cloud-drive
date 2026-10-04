@@ -10,6 +10,7 @@ import com.mengde.clouddrive.error.DuplicateEntryNameException;
 import com.mengde.clouddrive.error.InstantUploadCandidateNotFoundException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import com.mengde.clouddrive.web.TrashEntryResponse;
@@ -24,9 +25,11 @@ import com.mengde.clouddrive.web.TrashEntryResponse;
 public class DriveEntryRepository {
 
     private final DriveEntryMapper mapper;
+    private final FileSearchMapper search;
 
-    public DriveEntryRepository(DriveEntryMapper mapper) {
+    public DriveEntryRepository(DriveEntryMapper mapper, FileSearchMapper search) {
         this.mapper = mapper;
+        this.search = search;
     }
 
     public DriveEntry save(DriveEntry entry) {
@@ -50,6 +53,7 @@ public class DriveEntryRepository {
                 .toList();
     }
 
+    @Transactional
     public DriveEntry saveGenerated(long ownerId, Long parentId, String displayName, EntryKind kind, long byteSize) {
         DriveEntryInsertRow row = new DriveEntryInsertRow();
         row.setOwnerId(ownerId);
@@ -62,6 +66,7 @@ public class DriveEntryRepository {
         } catch (DuplicateKeyException exception) {
             throw new DuplicateEntryNameException(displayName);
         }
+        search.changed(ownerId);
         return findByOwnerAndId(ownerId, row.getId());
     }
 
@@ -83,12 +88,14 @@ public class DriveEntryRepository {
         return mapper.countChildrenByOwnerAndParent(ownerId, parentId) > 0;
     }
 
+    @Transactional
     public StoredDocumentRow saveStoredDocument(long ownerId, Long parentId, String displayName, long byteSize, String storageKey, String md5) {
         StoredDocumentRow row = new StoredDocumentRow();
         row.setOwnerId(ownerId); row.setParentId(parentId); row.setDisplayName(displayName.trim());
         row.setByteSize(byteSize); row.setStorageKey(storageKey); row.setContentMd5(md5);
         try { mapper.insertStoredDocument(row); }
         catch (DuplicateKeyException exception) { throw new DuplicateEntryNameException(displayName); }
+        search.changed(ownerId);
         return row;
     }
 
@@ -109,6 +116,7 @@ public class DriveEntryRepository {
         }
     }
 
+    @Transactional
     public void renameByOwner(long ownerId, long id, String displayName) {
         try {
             int updated = mapper.updateDisplayNameByOwner(ownerId, id, displayName.trim());
@@ -118,16 +126,19 @@ public class DriveEntryRepository {
         } catch (DuplicateKeyException exception) {
             throw new DuplicateEntryNameException(displayName);
         }
+        search.changed(ownerId);
     }
 
     public void deleteById(long id) {
         mapper.deleteById(id);
     }
 
+    @Transactional
     public void deleteByOwnerAndId(long ownerId, long id) {
         if (mapper.deleteByOwnerAndId(ownerId, id) == 0) {
             throw new EntryNotFoundException(id);
         }
+        search.changed(ownerId);
     }
 
     public List<TrashEntryResponse> findTrashByOwner(long ownerId, int page, int size) {
@@ -137,12 +148,17 @@ public class DriveEntryRepository {
 
     public long countTrashByOwner(long ownerId) { return mapper.countTrashByOwner(ownerId); }
 
+    @Transactional
     public void restoreByOwnerAndId(long ownerId, long id) {
         try { if (mapper.restoreByOwnerAndId(ownerId, id) == 0) throw new EntryNotFoundException(id); }
         catch (DuplicateKeyException e) { throw new DuplicateEntryNameException("restored entry"); }
+        search.changed(ownerId);
     }
 
-    public void purgeTrashByOwner(long ownerId) { mapper.purgeTrashByOwner(ownerId); }
+    @Transactional
+    public void purgeTrashByOwner(long ownerId) {
+        if (mapper.purgeTrashByOwner(ownerId) > 0) search.changed(ownerId);
+    }
 
     public void deleteAll() {
         mapper.deleteAll();

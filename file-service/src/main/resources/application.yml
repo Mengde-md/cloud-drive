@@ -37,6 +37,10 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 clouddrive:
+  search:
+    enabled: ${CLOUDDRIVE_SEARCH_ENABLED:false}
+    uri: ${CLOUDDRIVE_SEARCH_URI:http://127.0.0.1:19200}
+    index: ${CLOUDDRIVE_SEARCH_INDEX:clouddrive-files-v1}
   internal:
     service-token: ${CLOUDDRIVE_INTERNAL_SERVICE_TOKEN:}
   security:
@@ -47,6 +51,9 @@ clouddrive:
   chunk-storage:
     root: ${CLOUDDRIVE_CHUNKS_ROOT:../build-output/upload-chunks}
 management:
+  health:
+    elasticsearch:
+      enabled: false
   endpoints:
     web:
       exposure:

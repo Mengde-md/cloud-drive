@@ -88,7 +88,8 @@ public class AuthenticationGlobalFilter implements GlobalFilter, Ordered {
         return decoder.decode(header.substring(7))
                 .onErrorResume(JwtException.class, ex -> {
                     // 只记路径与异常类型，绝不记 token 本身——日志会被收集、被转发、被长期保存。
-                    log.debug("gateway rejected token for path {}: {}", path, ex.getClass().getSimpleName());
+                    log.debug("event=gateway_token_rejected traceId={}",
+                            exchange.getRequest().getHeaders().getFirst(RequestTraceWebFilter.HEADER));
                     return unauthorized(exchange, "authentication required or token invalid")
                             .then(Mono.<Jwt>empty());
                 })

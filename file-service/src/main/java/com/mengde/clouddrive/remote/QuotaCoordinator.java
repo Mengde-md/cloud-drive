@@ -56,7 +56,9 @@ public class QuotaCoordinator {
                 });
                 // The metadata and COMMIT_PENDING marker have committed atomically. Never release them on timeout.
                 try { reconcile(owner); }
-                catch (RuntimeException deferred) { log.warn("event=quota_finalize_pending owner={} reservation={}", owner, id); }
+                catch (RuntimeException deferred) {
+                    log.warn("event=quota_finalize_pending traceId={} phase=COMMIT_PENDING", org.slf4j.MDC.get("traceId"));
+                }
                 return result;
             } catch (RuntimeException failure) {
                 try { reconcile(owner); }

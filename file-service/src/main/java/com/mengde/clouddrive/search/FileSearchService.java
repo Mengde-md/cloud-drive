@@ -1,6 +1,9 @@
 package com.mengde.clouddrive.search;
 
 import com.mengde.clouddrive.persistence.FileSearchMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -15,10 +18,12 @@ public class FileSearchService {
     private final FileSearchIndex index;
     private final TransactionTemplate transaction;
     private final TransactionTemplate fallback;
+    private final MeterRegistry meters;
 
-    public FileSearchService(FileSearchMapper mapper, FileSearchIndex index, PlatformTransactionManager manager) {
+    public FileSearchService(FileSearchMapper mapper, FileSearchIndex index, PlatformTransactionManager manager, MeterRegistry meters) {
         this.mapper = mapper;
         this.index = index;
+        this.meters = meters;
         transaction = new TransactionTemplate(manager);
         transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
@@ -29,6 +34,23 @@ public class FileSearchService {
     }
 
     public SearchPage search(long owner, SearchQuery query) {
+        long start = System.nanoTime();
+        String outcome = "ERROR";
+        try {
+            var page = searchPage(owner, query);
+            outcome = page.source();
+            return page;
+        } finally {
+            long elapsed = System.nanoTime() - start;
+            meters.timer("clouddrive.search.calls", "outcome", outcome)
+                    .record(elapsed, java.util.concurrent.TimeUnit.NANOSECONDS);
+            LoggerFactory.getLogger(FileSearchService.class).info(
+                    "event=file_search traceId={} outcome={} durationMs={}",
+                    MDC.get("traceId"), outcome, elapsed / 1_000_000);
+        }
+    }
+
+    private SearchPage searchPage(long owner, SearchQuery query) {
         try {
             var state = synchronize(owner, false);
             var hits = index.search(owner, state.generation(), query);

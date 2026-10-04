@@ -23,7 +23,8 @@ class ElasticSearchLiveIT {
         client = new ElasticsearchClient(transport);
         assertThat(client.info().version().number()).isEqualTo("8.10.4");
         name = "day27-it-" + UUID.randomUUID();
-        service = new FileSearchService(db.mapper, new ElasticFileSearchIndex(client, true, name), db.manager);
+        service = new FileSearchService(db.mapper, new ElasticFileSearchIndex(client, true, name), db.manager,
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
     }
     @AfterEach void close() throws Exception {
         try {
@@ -87,7 +88,8 @@ class ElasticSearchLiveIT {
         try (var socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
         try (var unavailable = new SearchConfiguration().searchTransport("http://127.0.0.1:" + port)) {
             var offline = new FileSearchService(db.mapper,
-                    new ElasticFileSearchIndex(new ElasticsearchClient(unavailable), true, name), db.manager);
+                    new ElasticFileSearchIndex(new ElasticsearchClient(unavailable), true, name), db.manager,
+                    new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
             db.add("report during outage");
             var result = offline.search(db.owner, new SearchQuery("report", 0, 20));
             assertThat(result.source()).isEqualTo("MYSQL");

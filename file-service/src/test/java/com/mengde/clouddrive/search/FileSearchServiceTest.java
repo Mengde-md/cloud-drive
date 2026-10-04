@@ -15,7 +15,7 @@ class FileSearchServiceTest {
     @BeforeEach void setup() throws Exception {
         db = new SearchDatabaseFixture();
         index = mock(FileSearchIndex.class);
-        service = new FileSearchService(db.mapper, index, db.manager);
+        service = new FileSearchService(db.mapper, index, db.manager, new io.micrometer.core.instrument.simple.SimpleMeterRegistry());
         when(index.search(anyLong(), anyString(), any())).thenReturn(new FileSearchIndex.IndexPage(List.of(), 0));
     }
     @AfterEach void close() { if (db != null) db.close(); }

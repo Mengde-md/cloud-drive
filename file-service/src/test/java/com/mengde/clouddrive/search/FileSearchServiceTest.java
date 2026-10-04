@@ -163,6 +163,8 @@ class FileSearchServiceTest {
         assertThat(service.reindex(db.owner).ready()).isTrue();
         verify(index).replace(eq(db.owner), anyString(), eq(List.of()));
         assertThatThrownBy(() -> new SearchQuery(" ", 0, 20)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new SearchQuery("\u0000", 0, 20)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new SearchQuery(null, 0, 20)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new SearchQuery("x".repeat(101), 0, 20)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new SearchQuery("x", Integer.MAX_VALUE, 50)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new SearchQuery("x", -1, 20)).isInstanceOf(IllegalArgumentException.class);

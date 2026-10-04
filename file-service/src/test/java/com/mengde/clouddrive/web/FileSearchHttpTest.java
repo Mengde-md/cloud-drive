@@ -43,6 +43,8 @@ class FileSearchHttpTest {
         authenticated();
         mvc.perform(get("/api/files/search").param("q", "report").param("page", "2147483647")
                         .header("Authorization", "Bearer valid")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/files/search").param("q", "\u0000")
+                        .header("Authorization", "Bearer valid")).andExpect(status().isBadRequest());
         verifyNoInteractions(search);
         when(search.reindex(9)).thenThrow(new SearchUnavailableException("ES_UNAVAILABLE"));
         mvc.perform(post("/api/files/search/reindex").header("Authorization", "Bearer valid"))

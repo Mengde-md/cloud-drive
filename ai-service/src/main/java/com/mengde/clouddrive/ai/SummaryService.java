@@ -5,11 +5,14 @@ import dev.langchain4j.model.chat.response.PartialResponse;
 import dev.langchain4j.model.chat.response.PartialResponseContext;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.chat.response.StreamingHandle;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.agent.tool.ToolSpecification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
@@ -48,10 +51,20 @@ public final class SummaryService implements AutoCloseable {
                 new Generated(id, settings.model(), response, usage(id, ownerId, response)));
     }
 
-    private <T> T execute(long ownerId, Callable<ChatResponse> request,
-                          BiFunction<String, ChatResponse, T> completion) {
+    public <T> T controlled(long ownerId, Callable<T> action) {
+        return execute(ownerId, action, (id, value) -> value);
+    }
+
+    Generated toolChat(long ownerId, List<ChatMessage> messages, List<ToolSpecification> specifications) {
+        ChatResponse response = client.toolChat(messages, specifications);
+        String id = UUID.randomUUID().toString();
+        return new Generated(id, settings.model(), response, usage(id, ownerId, response));
+    }
+
+    private <T, R> T execute(long ownerId, Callable<R> request,
+                             BiFunction<String, R, T> completion) {
         acquire();
-        Future<ChatResponse> future = null;
+        Future<R> future = null;
         String id = UUID.randomUUID().toString();
         try {
             future = workers.submit(request);
@@ -61,7 +74,10 @@ public final class SummaryService implements AutoCloseable {
             throw new AiFailure(504, "AI_TIMEOUT");
         }
         catch (InterruptedException failure) { Thread.currentThread().interrupt(); throw new AiFailure(503, "AI_INTERRUPTED"); }
-        catch (ExecutionException failure) { throw new AiFailure(502, "AI_UPSTREAM_FAILED"); }
+        catch (ExecutionException failure) {
+            if (failure.getCause() instanceof AiFailure rejected) throw rejected;
+            throw new AiFailure(502, "AI_UPSTREAM_FAILED");
+        }
         catch (RejectedExecutionException failure) { throw new AiFailure(429, "AI_BUSY"); }
         finally {
             if (future != null && !future.isDone()) future.cancel(true);

@@ -1,0 +1,27 @@
+@gateway = http://127.0.0.1:19100
+@token = REPLACE_WITH_LOCALLY_OBTAINED_JWT
+
+### Readonly schemas; USER JWT required
+GET {{gateway}}/api/ai/agent/tools
+Authorization: Bearer {{token}}
+
+### Controlled tool loop; requires an imported tenant document
+POST {{gateway}}/api/ai/agent/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?","allowExternalProcessing":true}
+
+### No external-processing consent: 400 before any provider call
+POST {{gateway}}/api/ai/agent/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?","allowExternalProcessing":false}
+
+### Spoofed owner is not a request field: 400
+POST {{gateway}}/api/ai/agent/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?","allowExternalProcessing":true,"ownerId":8}

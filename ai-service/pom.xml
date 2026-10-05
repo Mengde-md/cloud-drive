@@ -9,6 +9,7 @@
         <spring-boot.version>3.2.4</spring-boot.version>
         <langchain4j.version>1.21.0</langchain4j.version>
         <langchain4j-onnx.version>1.21.0-beta31</langchain4j-onnx.version>
+        <mcp-sdk.version>2.0.1</mcp-sdk.version>
     </properties>
     <dependencyManagement><dependencies>
         <dependency><groupId>com.fasterxml.jackson</groupId><artifactId>jackson-bom</artifactId><version>2.22.1</version><type>pom</type><scope>import</scope></dependency>
@@ -18,6 +19,7 @@
         <dependency><groupId>dev.langchain4j</groupId><artifactId>langchain4j-open-ai</artifactId><version>${langchain4j.version}</version></dependency>
         <dependency><groupId>dev.langchain4j</groupId><artifactId>langchain4j</artifactId><version>${langchain4j.version}</version></dependency>
         <dependency><groupId>dev.langchain4j</groupId><artifactId>langchain4j-embeddings-all-minilm-l6-v2-q</artifactId><version>${langchain4j-onnx.version}</version></dependency>
+        <dependency><groupId>io.modelcontextprotocol.sdk</groupId><artifactId>mcp-json-jackson2</artifactId><version>${mcp-sdk.version}</version></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-oauth2-resource-server</artifactId></dependency>

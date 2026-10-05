@@ -1,0 +1,46 @@
+@gateway = http://127.0.0.1:8080
+@token = replace-with-user-jwt
+@documentId = replace-with-import-response-documentId
+
+### Import caller-supplied UTF8 bytes; no drive file or URL is read
+POST {{gateway}}/api/ai/rag/documents
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"trash.txt","contentBase64":"RGVsZXRlZCBmaWxlcyBhcmUgbW92ZWQgaW50byB0aGUgcmVjeWNsZSBiaW4gZm9yIHRoaXJ0eSBkYXlzLiBVc2VycyBjYW4gcmVzdG9yZSBkZWxldGVkIGZpbGVzIGR1cmluZyB0aGlzIHJldGVudGlvbiBwZXJpb2Qu"}
+
+### List the JWT owner's volatile corpus
+GET {{gateway}}/api/ai/rag/documents
+Authorization: Bearer {{token}}
+
+### Local ONNX retrieval; no API key or external-processing consent required
+POST {{gateway}}/api/ai/rag/search
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?"}
+
+### Generation requires AI enabled plus explicit consent
+POST {{gateway}}/api/ai/rag/answer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?","allowExternalProcessing":true}
+
+### Out-of-corpus question: expected REFUSED / NO_EVIDENCE, no provider call
+POST {{gateway}}/api/ai/rag/answer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"Who composed the opera The Magic Flute?","allowExternalProcessing":true}
+
+### Missing consent: expected 400 before generation
+POST {{gateway}}/api/ai/rag/answer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?","allowExternalProcessing":false}
+
+### Delete owned document, expected 204; other-owner / unknown id always 404
+DELETE {{gateway}}/api/ai/rag/documents/{{documentId}}
+Authorization: Bearer {{token}}

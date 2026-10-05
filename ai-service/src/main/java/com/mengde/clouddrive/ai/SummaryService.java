@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.function.BiFunction;
 
 public final class SummaryService implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(SummaryService.class);
@@ -38,12 +39,23 @@ public final class SummaryService implements AutoCloseable {
     }
 
     public Result summarize(long ownerId, String text) {
+        return execute(ownerId, () -> client.summarize(text),
+                (id, response) -> result(id, ownerId, response));
+    }
+
+    public Generated answer(long ownerId, String evidenceJson) {
+        return execute(ownerId, () -> client.answer(evidenceJson), (id, response) ->
+                new Generated(id, settings.model(), response, usage(id, ownerId, response)));
+    }
+
+    private <T> T execute(long ownerId, Callable<ChatResponse> request,
+                          BiFunction<String, ChatResponse, T> completion) {
         acquire();
         Future<ChatResponse> future = null;
         String id = UUID.randomUUID().toString();
         try {
-            future = workers.submit(() -> client.summarize(text));
-            return result(id, ownerId, future.get(settings.timeoutMillis(), TimeUnit.MILLISECONDS));
+            future = workers.submit(request);
+            return completion.apply(id, future.get(settings.timeoutMillis(), TimeUnit.MILLISECONDS));
         } catch (TimeoutException failure) {
             log.info("event=ai_failure requestId={} ownerId={} code=AI_TIMEOUT cost=unknown", id, ownerId);
             throw new AiFailure(504, "AI_TIMEOUT");
@@ -58,10 +70,15 @@ public final class SummaryService implements AutoCloseable {
     }
 
     private Result result(String id, long ownerId, ChatResponse response) {
+        AiCost cost = usage(id, ownerId, response);
+        return new Result(id, settings.model(), validator.validate(response), cost);
+    }
+
+    private AiCost usage(String id, long ownerId, ChatResponse response) {
         AiCost cost = AiCost.from(response == null ? null : response.tokenUsage(), settings.protocolFixture());
         log.info("event=ai_usage requestId={} ownerId={} inputTokens={} outputTokens={} estimatedUsd={} fixture={}",
                 id, ownerId, cost.inputTokens(), cost.outputTokens(), cost.estimatedUsd(), cost.protocolFixture());
-        return new Result(id, settings.model(), validator.validate(response), cost);
+        return cost;
     }
 
     public SseEmitter stream(long ownerId, String text) {
@@ -142,4 +159,5 @@ public final class SummaryService implements AutoCloseable {
 
     @Override public void close() { workers.shutdownNow(); clock.shutdownNow(); }
     public record Result(String requestId, String model, SummaryValidator.Summary output, AiCost usage) { }
+    public record Generated(String requestId, String model, ChatResponse response, AiCost usage) { }
 }

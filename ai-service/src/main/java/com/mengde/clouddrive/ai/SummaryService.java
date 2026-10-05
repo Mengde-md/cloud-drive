@@ -73,10 +73,7 @@ public final class SummaryService implements AutoCloseable {
         emitter.onTimeout(() -> call.fail("AI_TIMEOUT"));
         call.deadline = clock.schedule(() -> call.fail("AI_TIMEOUT"), settings.timeoutMillis(), TimeUnit.MILLISECONDS);
         try {
-            workers.execute(() -> {
-                try { client.stream(text, call); }
-                catch (RuntimeException failure) { call.fail("AI_UPSTREAM_FAILED"); }
-            });
+            workers.execute(() -> call.start(text));
         } catch (RejectedExecutionException failure) { call.fail("AI_BUSY"); }
         return emitter;
     }
@@ -90,6 +87,12 @@ public final class SummaryService implements AutoCloseable {
         private StreamingHandle handle;
         private ScheduledFuture<?> deadline;
         private StreamCall(SseEmitter emitter, long owner) { this.emitter = emitter; this.owner = owner; }
+
+        private void start(String text) {
+            synchronized (this) { if (closed) return; }
+            try { client.stream(text, this); }
+            catch (RuntimeException failure) { fail("AI_UPSTREAM_FAILED"); }
+        }
 
         @Override public synchronized void onPartialResponse(PartialResponse partial, PartialResponseContext context) {
             handle = context.streamingHandle();

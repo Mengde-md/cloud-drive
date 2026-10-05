@@ -3,6 +3,7 @@ package com.mengde.clouddrive.ai;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
@@ -22,6 +23,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(OutputCaptureExtension.class)
@@ -35,6 +38,7 @@ class AiHttpContractTest {
     private static final ObjectMapper json = new ObjectMapper();
     private final HttpClient http = HttpClient.newHttpClient();
     @LocalServerPort int port;
+    @Autowired SummaryService service;
 
     @DynamicPropertySource static void provider(DynamicPropertyRegistry registry) {
         registry.add("clouddrive.ai.base-url", fixture::baseUrl);
@@ -180,6 +184,33 @@ class AiHttpContractTest {
         assertTrue(events.contains("AI_TIMEOUT"));
         assertFalse(events.contains("event:result"));
         assertEquals(200, summary("after-timeout").statusCode());
+    }
+
+    @Test void expiredQueuedStreamDoesNotStartAProviderRequestAfterItsTimeout() throws Exception {
+        // Hold the worker to model an earlier transport that has not yet released its thread.
+        var field = SummaryService.class.getDeclaredField("workers");
+        field.setAccessible(true);
+        ExecutorService workers = (ExecutorService) field.get(service);
+        CountDownLatch occupied = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var blocker = workers.submit(() -> {
+            occupied.countDown();
+            try { release.await(6, TimeUnit.SECONDS); }
+            catch (InterruptedException failure) { Thread.currentThread().interrupt(); }
+        });
+        try {
+            assertTrue(occupied.await(1, TimeUnit.SECONDS));
+            int before = fixture.requests.get();
+            String events = stream("expired-in-queue");
+            assertTrue(events.contains("AI_TIMEOUT"), events);
+            assertFalse(events.contains("event:result"));
+            release.countDown();
+            blocker.get(1, TimeUnit.SECONDS);
+            workers.submit(() -> { }).get(1, TimeUnit.SECONDS);
+            assertFalse(fixture.firstChunk.await(1, TimeUnit.SECONDS), "Expired work contacted the provider");
+            assertEquals(before, fixture.requests.get());
+            assertEquals(200, summary("after-expired-queue").statusCode());
+        } finally { release.countDown(); }
     }
 
     @Test void occupiedStreamRejectsAnotherCallAndClientDisconnectReleasesSlot() throws Exception {

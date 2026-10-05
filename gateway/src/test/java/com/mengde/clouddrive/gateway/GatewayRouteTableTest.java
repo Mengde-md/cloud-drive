@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
                 "clouddrive.gateway.auth-uri=http://127.0.0.1:18081",
                 "clouddrive.gateway.user-uri=http://127.0.0.1:18080",
                 "clouddrive.gateway.file-uri=http://127.0.0.1:18082",
+                "clouddrive.gateway.ai-uri=http://127.0.0.1:18084",
                 // Day25：网关新增 ReactiveJwtDecoder Bean，密钥不足 32 字节会在
                 // 上下文启动阶段抛 IllegalStateException，整组路由测试会以
                 // "Failed to load ApplicationContext" 的形式失败——根因离现象很远，
@@ -52,7 +53,7 @@ class GatewayRouteTableTest {
     private GatewayProperties gatewayProperties;
 
     @Test
-    void routeTableContainsExactlyTheSixDay24RoutesNamedAfterFutureServices() {
+    void routeTableContainsExactlyTheSevenRoutesIncludingDay30Ai() {
         Set<String> ids = routeLocator.getRoutes()
                 .map(Route::getId)
                 .collect(Collectors.toSet())
@@ -60,8 +61,17 @@ class GatewayRouteTableTest {
 
         assertEquals(
                 Set.of("auth-service-route", "user-service-route", "file-service-route",
-                        "share-service-route", "api-docs-route", "monolith-health-route"),
+                        "share-service-route", "api-docs-route", "monolith-health-route", "ai-service-route"),
                 ids);
+    }
+
+    @Test
+    void aiRouteIsStaticLoopbackAndOwnsOnlyItsAuthenticatedNamespace() {
+        var route = gatewayProperties.getRoutes().stream()
+                .filter(item -> "ai-service-route".equals(item.getId())).findFirst().orElseThrow();
+        assertEquals("http://127.0.0.1:18084", route.getUri().toString());
+        assertEquals(List.of("/api/ai/**"), route.getPredicates().stream()
+                .flatMap(item -> item.getArgs().values().stream()).toList());
     }
 
     /** Day26: both business processes must remain independent of the legacy monolith. */

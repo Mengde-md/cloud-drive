@@ -50,3 +50,11 @@ jobs:
           $env:CLOUDDRIVE_JWT_SECRET = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
           $env:CLOUDDRIVE_INTERNAL_SERVICE_TOKEN = [Guid]::NewGuid().ToString('N') + [Guid]::NewGuid().ToString('N')
           ./scripts/day29-ci.ps1
+      - name: Verify Day30 AI without external model credentials
+        shell: pwsh
+        env:
+          CLOUDDRIVE_AI_ENABLED: 'false'
+          CLOUDDRIVE_AI_API_KEY: ''
+        run: |
+          mvn -B -ntp -f ai-service/pom.xml clean verify
+          if ($LASTEXITCODE -ne 0) { throw 'AI protocol verification failed' }

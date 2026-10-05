@@ -1,0 +1,24 @@
+@gateway = http://127.0.0.1:9000
+@jwt = replace-with-auth-service-login-token
+
+### Requires USER JWT and explicit agreement to external processing; default AI-disabled mode returns 503.
+POST {{gateway}}/api/ai/summary
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{"text":"CloudDrive uses separate auth, user, file and gateway processes.","allowExternalProcessing":true}
+
+### Real SSE: progress counts only; exactly one validated result or error terminates the response.
+POST {{gateway}}/api/ai/summary/stream
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+Accept: text/event-stream
+
+{"text":"Summarize the supplied public project description.","allowExternalProcessing":true}
+
+### 400 without sending text upstream.
+POST {{gateway}}/api/ai/summary
+Authorization: Bearer {{jwt}}
+Content-Type: application/json
+
+{"text":"Do not send this upstream.","allowExternalProcessing":false}

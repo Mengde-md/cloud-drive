@@ -37,6 +37,10 @@ spring:
         # 手工验证与故障排查都靠它，不需要去翻日志。
         - AddResponseHeader=X-CloudDrive-Gateway, day24
       routes:
+        - id: ai-service-route
+          uri: ${clouddrive.gateway.ai-uri}
+          predicates:
+            - Path=/api/ai/**
         # Day26: auth is independent; entries/files/shares and API docs belong to file-service.
         # Keep the historical user-service-route id for compatibility; it does not expose quota APIs.
         #
@@ -82,6 +86,7 @@ clouddrive:
       secret: ${CLOUDDRIVE_JWT_SECRET:}
 
   gateway:
+    ai-uri: ${CLOUDDRIVE_AI_URI:http://127.0.0.1:8084}
     # user-uri now remains only for the legacy monolith operational route.
     auth-uri: ${CLOUDDRIVE_AUTH_URI:http://127.0.0.1:8081}
     user-uri: ${CLOUDDRIVE_APP_URI:http://127.0.0.1:8080}

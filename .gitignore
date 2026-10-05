@@ -11,6 +11,10 @@ build-output/
 # Local environment and secrets
 .env
 .env.local
+.env.*
+!.env.example
+*.local.yml
+deploy/runtime/
 *.log
 
 # Operating system files

@@ -3,6 +3,7 @@
 param(
     [string]$JavaHome = $env:JAVA_HOME,
     [string]$RedisConfig,
+    [switch]$PackagedJars,
     [string]$OutputRoot = ([IO.Path]::GetTempPath())
 )
 $ErrorActionPreference = 'Stop'
@@ -39,13 +40,30 @@ function Request($port, $path, $method = 'GET', $body = $null, $headers = @{}) {
 }
 function Start-App($app) {
     $dir = Join-Path $repo $app.Dir
+    if ($PackagedJars) {
+        $jars = @(Get-ChildItem (Join-Path $dir 'build-output') -Filter '*.jar' | Where-Object { $_.Name -notmatch '-migration\.jar$' })
+        if ($jars.Count -ne 1) { throw 'Exactly one executable package is required' }
+        $jar = $jars[0]
+        $arguments = @('-jar', ('"'+$jar.FullName+'"'), '--spring.profiles.active=prod')
+        if ($app.Name -eq 'file') {
+            $zip = [IO.Compression.ZipFile]::OpenRead($jar.FullName)
+            try {
+                $driver = $zip.Entries | Where-Object FullName -match '^BOOT-INF/lib/mysql-connector-j-[^/]+\.jar$' | Select-Object -First 1
+                if (!$driver) { throw 'Packaged JDBC driver missing' }
+                $driverPath = Join-Path $output 'runtime-mysql-driver.jar'
+                [IO.Compression.ZipFileExtensions]::ExtractToFile($driver, $driverPath, $true)
+                $script:classpath.file = $driverPath
+            } finally { $zip.Dispose() }
+        }
+    } else {
     $report = Get-ChildItem (Join-Path $dir 'build-output/surefire-reports') -Filter 'TEST-*.xml' | Select-Object -First 1
     [xml]$xml = Get-Content -LiteralPath $report.FullName -Raw -Encoding UTF8
     $cp = ($xml.testsuite.properties.property | Where-Object name -eq 'java.class.path').value
     $cp = (($cp -split ';') | Where-Object { $_ -and $_ -notmatch '[\\/]test-classes[\\/]?$' }) -join ';'
     $script:classpath[$app.Name] = $cp
-    $arguments = @('-cp', ('"'+$cp+'"'), $app.Main, '--server.address=127.0.0.1', "--server.port=$($app.Port)",
-        '--spring.profiles.active=default', '--spring.cloud.nacos.discovery.enabled=false',
+    $arguments = @('-cp', ('"'+$cp+'"'), $app.Main, '--spring.profiles.active=default')
+    }
+    $arguments += @('--server.address=127.0.0.1', "--server.port=$($app.Port)", '--spring.cloud.nacos.discovery.enabled=false',
         '--spring.cloud.nacos.config.enabled=false', '--spring.cloud.nacos.config.import-check.enabled=false',
         '--spring.cloud.openfeign.client.config.cloud-drive-auth.url=http://127.0.0.1:8081',
         '--spring.cloud.openfeign.client.config.cloud-drive-user.url=http://127.0.0.1:8083')

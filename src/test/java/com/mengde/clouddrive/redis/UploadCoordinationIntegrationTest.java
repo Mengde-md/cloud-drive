@@ -20,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest(classes = DriveEntryWebApplication.class, properties = {
         "spring.datasource.url=${CLOUDDRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}",
-        "spring.datasource.username=${CLOUDDRIVE_DB_USERNAME:root}",
-        "spring.datasource.password=${CLOUDDRIVE_DB_PASSWORD:123456}"
+        "spring.datasource.username=${CLOUDDRIVE_DB_USERNAME}",
+        "spring.datasource.password=${CLOUDDRIVE_DB_PASSWORD}"
 })
 class UploadCoordinationIntegrationTest {
     @Autowired UploadCoordination coordination;

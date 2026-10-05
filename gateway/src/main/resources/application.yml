@@ -1,5 +1,6 @@
 server:
   port: ${CLOUDDRIVE_GATEWAY_PORT:9000}
+  address: ${CLOUDDRIVE_GATEWAY_BIND_ADDRESS:127.0.0.1}
 
 spring:
   application:

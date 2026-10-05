@@ -30,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 让 auth-service 的工程门不依赖 MySQL，意味着它在任何一台机器上都能跑；
  * 真正跨进程的端到端验证是本日手工验收的第 4 项，用真实容器做，两者不互相替代。
  */
-@WebMvcTest(controllers = {AuthController.class, InternalIdentityController.class})
+@WebMvcTest(controllers = {AuthController.class, InternalIdentityController.class},
+        properties = "clouddrive.internal.service-token=day25-test-only-internal-token-at-least-32-bytes")
 @Import({SecurityConfiguration.class, JwtTokenService.class})
 class AuthServiceHttpContractTest {
 

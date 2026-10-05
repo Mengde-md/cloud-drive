@@ -1,5 +1,3 @@
-version: "3.9"
-
 # Day23: freezes a reproducible local runtime for CloudDrive's MySQL/Redis
 # dependencies. Every credential is supplied through deploy/.env (copied from
 # .env.example) — nothing here is a personal credential baked into the file.
@@ -22,7 +20,7 @@ services:
       MYSQL_PASSWORD: ${CLOUDDRIVE_DB_PASSWORD:?set CLOUDDRIVE_DB_PASSWORD in deploy/.env}
       MYSQL_ROOT_PASSWORD: ${CLOUDDRIVE_DB_ROOT_PASSWORD:?set CLOUDDRIVE_DB_ROOT_PASSWORD in deploy/.env}
     ports:
-      - "${CLOUDDRIVE_DB_PORT:-3306}:3306"
+      - "127.0.0.1:${CLOUDDRIVE_DB_PORT:-3306}:3306"
     volumes:
       - clouddrive-mysql-data:/var/lib/mysql
     healthcheck:
@@ -38,7 +36,7 @@ services:
     command: >
       redis-server --requirepass ${CLOUDDRIVE_REDIS_PASSWORD:?set CLOUDDRIVE_REDIS_PASSWORD in deploy/.env}
     ports:
-      - "${CLOUDDRIVE_REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${CLOUDDRIVE_REDIS_PORT:-6379}:6379"
     volumes:
       - clouddrive-redis-data:/data
     healthcheck:
@@ -58,6 +56,7 @@ services:
   # 网络上，任何人都能改线上配置，这是真实事故的常见来源。identity/token 全部来自
   # deploy/.env，compose 文件里没有任何真实口令。
   nacos:
+    profiles: [nacos]
     image: nacos/nacos-server:v2.3.2
     container_name: clouddrive-nacos
     restart: unless-stopped
@@ -72,8 +71,8 @@ services:
     ports:
       # 8848 = 控制台与 OpenAPI；9848 = 2.x 的 gRPC 客户端端口，少映射这一个的表现是
       # 控制台能打开、但客户端注册一直超时，是 Nacos 2.x 最常见的踩坑点。
-      - "${CLOUDDRIVE_NACOS_PORT:-8848}:8848"
-      - "${CLOUDDRIVE_NACOS_GRPC_PORT:-9848}:9848"
+      - "127.0.0.1:${CLOUDDRIVE_NACOS_PORT:-8848}:8848"
+      - "127.0.0.1:${CLOUDDRIVE_NACOS_GRPC_PORT:-9848}:9848"
     volumes:
       - clouddrive-nacos-data:/home/nacos/data
     healthcheck:
@@ -83,22 +82,13 @@ services:
       retries: 20
 
 # ------------------------------------------------------------------------------
-# Day25 说明：本文件仍然只编排**中间件**（MySQL / Redis / Nacos），没有把单体、
-# auth-service、gateway 三个 Java 进程做成 service。
-#
-# 这是有意的，理由是"不要让 compose 假装已经验证了没验证过的东西"：把三个进程写进
-# compose 需要先有可用的镜像构建（Dockerfile + 分层构建 + 健康检查 + 启动顺序依赖），
-# 而这些在本会话的沙箱里一次都没有真实执行过。写出来只会得到一份看起来很完整、
-# 实际从未跑通的编排文件。
-#
-# 因此 Day25 的手工验收方式是：用本文件起中间件，三个 Java 进程用
-# `java -jar` 或 `mvn spring-boot:run` 在宿主机分别启动，端口分别是
-# 8080 / 8081 / 9000。具体命令见 docs/day25/Final.md 的手工验收一节。
-#
-# 真实形态下"单体端口不对外暴露、一切流量必经网关"这个前提，在宿主机直跑的方式下
-# **并不成立**（8080 和 8081 都是可达的）。所以 CLOUDDRIVE_TRUST_GATEWAY_HEADERS
-# 在手工验收时也只做对照实验，不当作安全结论。把三个进程容器化、只暴露网关端口，
-# 是 Day26 file-service 迁移后一并处理的事。
+# Day29: middleware compose remains separate from packaged Java host processes.
+# deploy/Start-CloudDrive.ps1 migrates V1-V10 with the migration-only root JAR,
+# then starts auth(8081), user(8083), file(8082), gateway(9000), all on loopback.
+# No historical monolith web writer is started. JWT and internal-token guards
+# remain necessary: loopback binding is not authorization or container isolation.
+# Nacos requires --profile nacos and explicit credentials; it is not the default.
+# This file is syntax-checked, not claimed as runtime-verified when Docker is down.
 # ------------------------------------------------------------------------------
 
 volumes:

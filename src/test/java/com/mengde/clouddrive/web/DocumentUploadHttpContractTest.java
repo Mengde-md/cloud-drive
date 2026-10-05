@@ -24,7 +24,7 @@ import java.util.Comparator;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = DriveEntryWebApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"spring.datasource.url=${CLOUDDRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}", "spring.datasource.username=${CLOUDDRIVE_DB_USERNAME:root}", "spring.datasource.password=${CLOUDDRIVE_DB_PASSWORD:123456}", "clouddrive.storage.root=target/day17-upload-test-storage"})
+        properties = {"spring.datasource.url=${CLOUDDRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive_learning?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}", "spring.datasource.username=${CLOUDDRIVE_DB_USERNAME}", "spring.datasource.password=${CLOUDDRIVE_DB_PASSWORD}", "clouddrive.storage.root=target/day17-upload-test-storage"})
 class DocumentUploadHttpContractTest {
     private static final Path ROOT = Path.of("target/day17-upload-test-storage");
     @Autowired TestRestTemplate rest; @Autowired DriveEntryRepository entries; @Autowired UserAccountMapper users;

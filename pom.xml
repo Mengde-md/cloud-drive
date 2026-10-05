@@ -127,6 +127,17 @@
                 <configuration>
                     <mainClass>com.mengde.clouddrive.web.DriveEntryWebApplication</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>migration-jar</id>
+                        <goals><goal>repackage</goal></goals>
+                        <configuration>
+                            <classifier>migration</classifier>
+                            <mainClass>com.mengde.clouddrive.deployment.DatabaseMigrationApplication</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution><id>application-jar</id><goals><goal>repackage</goal></goals></execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

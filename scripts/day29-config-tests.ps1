@@ -38,6 +38,8 @@ try {
     Expect-Failure { & $test -Settings $input } 'root deployment account'
     $input = $valid.Clone(); $input.CLOUDDRIVE_STORAGE_ROOT='relative'
     Expect-Failure { & $test -Settings $input } 'relative persistent directory'
+    $input = $valid.Clone(); $input.CLOUDDRIVE_STORAGE_ROOT=Join-Path $temp 'build-output/objects'
+    Expect-Failure { & $test -Settings $input } 'persistent data in Maven output'
     $input = $valid.Clone(); $input.CLOUDDRIVE_CHUNKS_ROOT=$input.CLOUDDRIVE_STORAGE_ROOT
     Expect-Failure { & $test -Settings $input } 'overlapping directories'
     $input = $valid.Clone(); $input.CLOUDDRIVE_CHUNKS_ROOT=Join-Path $input.CLOUDDRIVE_STORAGE_ROOT 'nested'

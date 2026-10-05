@@ -31,6 +31,9 @@ if ($Settings.CLOUDDRIVE_DB_URL -notmatch '^jdbc:mysql://' -or $Settings.CLOUDDR
 }
 foreach ($key in @('CLOUDDRIVE_STORAGE_ROOT','CLOUDDRIVE_CHUNKS_ROOT')) {
     if (![IO.Path]::IsPathRooted([string]$Settings[$key])) { throw "Persistent directory must be absolute: $key" }
+    if ([IO.Path]::GetFullPath($Settings[$key]) -match '(^|[\\/])(build-output|target)([\\/]|$)') {
+        throw "Persistent directory must not be Maven output: $key"
+    }
 }
 $objects = [IO.Path]::GetFullPath($Settings.CLOUDDRIVE_STORAGE_ROOT).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $chunks = [IO.Path]::GetFullPath($Settings.CLOUDDRIVE_CHUNKS_ROOT).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar

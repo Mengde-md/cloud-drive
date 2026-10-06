@@ -21,21 +21,37 @@ public final class AgentService {
     private final RagIndex index;
     private final SummaryService generation;
     private final boolean enabled;
+    private final AgentTelemetry telemetry;
     private final RagAnswerValidator validator = new RagAnswerValidator();
 
     public AgentService(RagIndex index, SummaryService generation, boolean enabled) {
-        this.index = index; this.generation = generation; this.enabled = enabled;
+        this(index, generation, enabled, new AgentTelemetry(io.micrometer.core.instrument.Metrics.globalRegistry));
+    }
+    public AgentService(RagIndex index, SummaryService generation, boolean enabled, AgentTelemetry telemetry) {
+        this.index = index; this.generation = generation; this.enabled = enabled; this.telemetry = telemetry;
     }
     public List<AgentToolCatalog.Definition> catalog() { checkEnabled(); return AgentToolCatalog.definitions(); }
     private void checkEnabled() { if (!enabled) throw new AiFailure(503, "AGENT_DISABLED"); }
     public Result ask(long owner, String question, boolean consent) {
+        AgentTelemetry.Span span = telemetry.begin();
+        try {
+            Result result = ask(owner, question, consent, span);
+            span.finish(result.status(), result.reason(), result.requestId());
+            return result;
+        } catch (AiFailure failure) {
+            span.finish("FAILED", failure.getMessage(), null); throw failure;
+        } catch (RuntimeException failure) {
+            span.finish("FAILED", "UNKNOWN_FAILURE", null); throw failure;
+        }
+    }
+    private Result ask(long owner, String question, boolean consent, AgentTelemetry.Span span) {
         checkEnabled();
         if (!consent || question == null || question.isBlank() || question.length() > 512
                 || question.chars().anyMatch(Character::isISOControl)) throw new AiFailure(400, "AGENT_INPUT_INVALID");
         if (index.list(owner).isEmpty()) return new Result(null, "REFUSED", "NO_EVIDENCE", "", List.of(), 0, 0, List.of());
-        return generation.controlled(owner, () -> run(owner, question));
+        return generation.controlled(owner, () -> run(owner, question, span));
     }
-    private Result run(long owner, String question) {
+    private Result run(long owner, String question, AgentTelemetry.Span span) {
         AgentToolSession tools = new AgentToolSession(index, owner);
         List<ChatMessage> messages = new ArrayList<>(List.of(SystemMessage.from(SYSTEM), UserMessage.from(question)));
         List<Usage> usages = new ArrayList<>();
@@ -43,7 +59,9 @@ public final class AgentService {
         int calls = 0;
         for (int turn = 1; turn <= MAX_MODEL_CALLS; turn++) {
             interrupted();
+            span.modelStarted();
             SummaryService.Generated step = generation.toolChat(owner, List.copyOf(messages), AgentToolCatalog.specifications());
+            span.modelFinished(step);
             usages.add(new Usage(step.requestId(), step.model(), step.usage()));
             interrupted();
             var response = step.response();
@@ -63,6 +81,7 @@ public final class AgentService {
             if (proposed.id() == null || !proposed.id().matches("[A-Za-z0-9_-]{1,64}") || !callIds.add(proposed.id())) throw invalid();
             interrupted();
             String output = tools.execute(proposed);
+            span.toolFinished(proposed.name());
             interrupted();
             calls++;
             messages.add(message);

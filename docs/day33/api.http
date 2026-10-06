@@ -1,0 +1,28 @@
+@ai = http://127.0.0.1:8084
+@userJwt = replace-with-out-of-band-valid-USER-JWT
+
+### Requires AI/RAG/Agent enabled, explicit provider config, imported owner documents, and consent.
+### Fixture expected 200 ANSWERED with 2 calls/1 tool; empty tenant 200 NO_EVIDENCE; restart clears evidence.
+POST {{ai}}/api/ai/agent/ask
+Authorization: Bearer {{userJwt}}
+Content-Type: application/json
+
+{"question":"How long are deleted files kept in the recycle bin?","allowExternalProcessing":true}
+
+### Same prerequisites; consent false must return 400 AI_INPUT_INVALID before model/Agent telemetry.
+POST {{ai}}/api/ai/agent/ask
+Authorization: Bearer {{userJwt}}
+Content-Type: application/json
+
+{"question":"test","allowExternalProcessing":false}
+
+### No caller-supplied owner; expect 400 AI_INPUT_INVALID and zero external calls.
+POST {{ai}}/api/ai/agent/ask
+Authorization: Bearer {{userJwt}}
+Content-Type: application/json
+
+{"question":"test","allowExternalProcessing":true,"ownerId":8}
+
+### Metrics stay unexposed and denied: authenticated USER 403, anonymous 401. No new management endpoint.
+GET {{ai}}/actuator/metrics
+Authorization: Bearer {{userJwt}}

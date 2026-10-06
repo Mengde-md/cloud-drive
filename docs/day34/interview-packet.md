@@ -39,6 +39,7 @@ MySQL and objects are authoritative; Redis and optional Elasticsearch are derive
 No cross-service distributed transaction, MQ delivery guarantee, persistent RAG, or auto file ingestion is implied.
 The historical monolith must not be a second writer during the multi-service demo.
 The MCP surface exposes exactly two read-only tools, not upload/delete/shell/network-fetch capabilities.
+HTTP Agent executes its local owner-bound tool session; MCP is a separate JWT HTTP bridge to the same RAG corpus, not the Agent's execution transport.
 Agent limits remain three model calls, two tool calls, one tool per turn, owner binding and citation validation.
 A caller deadline and best-effort cancellation do not prove the remote model stopped computing.
 

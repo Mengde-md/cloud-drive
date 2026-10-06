@@ -1,0 +1,90 @@
+{
+  "humanLearningAccepted" : false,
+  "status" : "PASS",
+  "chain" : {
+    "fileId" : 1194,
+    "sourceSha256" : "795369418111c9024389a0f7c839a1d422357eaf853add9092129963e1685ed4",
+    "downloadSha256" : "795369418111c9024389a0f7c839a1d422357eaf853add9092129963e1685ed4",
+    "restartSha256" : "795369418111c9024389a0f7c839a1d422357eaf853add9092129963e1685ed4",
+    "ragDocumentId" : "c6338e02-ebcc-4d77-9ef1-2fb83c2c2bf6",
+    "citationId" : "c6338e02-ebcc-4d77-9ef1-2fb83c2c2bf6:0"
+  },
+  "checks" : [ {
+    "passed" : true,
+    "check" : "AI executable JAR healthy"
+  }, {
+    "passed" : true,
+    "check" : "real auth registration owner"
+  }, {
+    "passed" : true,
+    "check" : "real auth login owner"
+  }, {
+    "passed" : true,
+    "check" : "real auth registration other"
+  }, {
+    "passed" : true,
+    "check" : "real auth login other"
+  }, {
+    "passed" : true,
+    "check" : "anonymous file request rejected at edge"
+  }, {
+    "passed" : true,
+    "check" : "gateway upload uses signed owner despite spoofed identity header"
+  }, {
+    "passed" : true,
+    "check" : "same owner's download equals uploaded bytes"
+  }, {
+    "passed" : true,
+    "check" : "different registered owner cannot download"
+  }, {
+    "passed" : true,
+    "check" : "gateway Range has exact bytes and Content-Range"
+  }, {
+    "passed" : true,
+    "check" : "business restart preserves database metadata and object bytes"
+  }, {
+    "passed" : true,
+    "check" : "explicit import through gateway uses same downloaded SHA256"
+  }, {
+    "passed" : true,
+    "check" : "real ONNX retrieval remains routed and references imported document"
+  }, {
+    "passed" : true,
+    "check" : "missing consent rejects before provider"
+  }, {
+    "passed" : true,
+    "check" : "other registered owner refuses without provider call"
+  }, {
+    "passed" : true,
+    "check" : "real SDK Agent answer cites same imported bytes"
+  }, {
+    "passed" : true,
+    "check" : "retrieved instruction cannot authorize document deletion"
+  }, {
+    "passed" : true,
+    "check" : "forged citation rejected"
+  }, {
+    "passed" : true,
+    "check" : "upstream error is redacted"
+  }, {
+    "passed" : true,
+    "check" : "actual MCP STDIO lists exactly two read-only tools"
+  }, {
+    "passed" : true,
+    "check" : "MCP JWT reaches same gateway RAG document"
+  }, {
+    "passed" : true,
+    "check" : "AI executable JAR healthy"
+  }, {
+    "passed" : true,
+    "check" : "AI restart loses in-memory RAG and refuses with zero provider calls"
+  }, {
+    "passed" : true,
+    "check" : "AI restart does not delete persistent business file"
+  }, {
+    "passed" : true,
+    "check" : "AI logs do not disclose JWT signing material or tokens"
+  } ],
+  "realModelCalled" : false,
+  "source" : "protocol_fixture"
+}

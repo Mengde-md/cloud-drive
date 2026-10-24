@@ -15,6 +15,7 @@
 - [配置参考](#配置参考)
 - [API 接口](#api-接口)
 - [项目结构](#项目结构)
+- [开发与问题反馈](#开发与问题反馈)
 
 ---
 
@@ -537,6 +538,12 @@ java -jar ai-service/target/ai-service-1.0-SNAPSHOT.jar
             ├── bootstrap.yml
             └── application.yml     # AI 提供商配置 + 索引参数
 ```
+
+---
+
+## 开发与问题反馈
+
+开发环境、提交前验证命令、模块位置和问题反馈方式见 [开发与问题反馈指南](CONTRIBUTING.md)。
 
 ---
 

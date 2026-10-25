@@ -202,6 +202,13 @@ Client ──► Gateway (8080) ──┬──► auth-service (8090)  -- 认�
 | `BusinessException` | 400 | 业务逻辑异常（参数错误、资源不存在等） |
 | `SystemException` | 500 | 系统内部异常 |
 | `MethodArgumentNotValidException` | 400 | Jakarta Validation 校验失败 |
+| `IllegalArgumentException` | 400 | 非法参数 |
+| `HttpMessageNotReadableException` | 400 | JSON 无法解析或字段类型不匹配 |
+| 其他未预期异常 | 500 | 返回固定提示，详细堆栈保留在服务端 |
+
+上述处理设置真实的 HTTP 状态，并保留 `code/message/data` 响应结构与自定义业务码。系统异常不向客户端返回内部诊断信息。
+
+改进背景、MockMvc 回归测试与面试讲解见 [统一异常处理说明](docs/interview-error-handling.md)。
 
 ### 认证方案（SA-Token）
 

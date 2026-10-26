@@ -1,0 +1,120 @@
+server:
+  port: 8080
+  # 本机开发/直连默认不信任客户端转发头；同机 Nginx 部署使用下方 deploy profile。
+  forward-headers-strategy: none
+
+spring:
+  application:
+    name: cloud-drive-learning
+
+  # 数据源：不在代码里写死凭据，由环境变量注入（Day23 的"非个人凭据环境"要求）
+  datasource:
+    url: ${CLOUD_DRIVE_DB_URL:jdbc:mysql://127.0.0.1:3306/cloud_drive?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8}
+    username: ${CLOUD_DRIVE_DB_USER:clouddrive}
+    password: ${CLOUD_DRIVE_DB_PASSWORD:clouddrive}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 10000
+
+  # Flyway：数据库结构唯一来源是 db/migration，升级时自动执行新增迁移
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${CLOUD_DRIVE_REDIS_HOST:127.0.0.1}
+      port: ${CLOUD_DRIVE_REDIS_PORT:6379}
+      password: ${CLOUD_DRIVE_REDIS_PASSWORD:}
+      timeout: 3000ms
+
+  servlet:
+    multipart:
+      # 单个分片默认按 5MB 设计，整体上传上限给到 200MB
+      max-file-size: 200MB
+      max-request-size: 200MB
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+clouddrive:
+  analysis:
+    deepseek-api-key: ${DEEPSEEK_API_KEY:}
+    deepseek-base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    deepseek-model: ${DEEPSEEK_MODEL:deepseek-flash}
+    request-timeout-seconds: ${DEEPSEEK_TIMEOUT_SECONDS:30}
+    max-text-bytes: ${AI_MAX_TEXT_BYTES:24000}
+    review-enabled: ${AI_REVIEW_ENABLED:false}
+  mail:
+    host: ${CLOUD_DRIVE_SMTP_HOST:}
+    port: ${CLOUD_DRIVE_SMTP_PORT:587}
+    username: ${CLOUD_DRIVE_SMTP_USERNAME:}
+    password: ${CLOUD_DRIVE_SMTP_PASSWORD:}
+    from: ${CLOUD_DRIVE_MAIL_FROM:${CLOUD_DRIVE_SMTP_USERNAME:}}
+    auth: ${CLOUD_DRIVE_SMTP_AUTH:true}
+    starttls: ${CLOUD_DRIVE_SMTP_STARTTLS:true}
+    ssl: ${CLOUD_DRIVE_SMTP_SSL:false}
+    ip-limit: ${CLOUD_DRIVE_MAIL_IP_LIMIT:20}
+    ip-window-seconds: ${CLOUD_DRIVE_MAIL_IP_WINDOW_SECONDS:600}
+  bootstrap-admin:
+    username: ${CLOUD_DRIVE_ADMIN_USERNAME:}
+    password: ${CLOUD_DRIVE_ADMIN_PASSWORD:}
+    email: ${CLOUD_DRIVE_ADMIN_EMAIL:}
+  storage:
+    # 最终对象（合并后的完整文件）存放目录
+    root: ${CLOUD_DRIVE_STORAGE_ROOT:build-output/local-storage}
+    # 分片临时目录
+    chunk-root: ${CLOUD_DRIVE_CHUNK_ROOT:build-output/local-chunks}
+  snapshot:
+    # Day04/Day06 的目录快照文件
+    path: ${CLOUD_DRIVE_SNAPSHOT_PATH:build-output/snapshots/entries.txt}
+  jwt:
+    # 对称密钥仅用于学习环境；生产应使用非对称密钥或密钥管理服务
+    secret: ${CLOUD_DRIVE_JWT_SECRET:change-me-cloud-drive-learning-secret-key-32bytes}
+    ttl-minutes: ${CLOUD_DRIVE_JWT_TTL_MINUTES:120}
+  trash:
+    # 回收站保留天数，超过则由定时任务彻底删除并回收磁盘对象。
+    # 设为 0 关闭自动清理（演示环境有时希望删掉的东西一直留着）。
+    retention-days: ${CLOUD_DRIVE_TRASH_RETENTION_DAYS:30}
+    # 默认每天凌晨 3:30 执行
+    cleanup-cron: ${CLOUD_DRIVE_TRASH_CLEANUP_CRON:0 30 3 * * *}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: cloud-drive-learning
+
+logging:
+  level:
+    root: INFO
+    com.mengde.clouddrive: INFO
+  pattern:
+    # Day22：结构化日志，带 traceId 便于把一次请求的多条日志串起来
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-no-trace}] %logger{36} - %msg%n"
+
+---
+# 仅适用于同一主机上的 Nginx -> 127.0.0.1:8080，不能直接暴露后端端口。
+spring:
+  config:
+    activate:
+      on-profile: deploy
+server:
+  address: 127.0.0.1
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      # 不沿用 Tomcat 默认的整个私网可信范围，只接受本机代理。
+      internal-proxies: '127\.0\.0\.1|::1|0:0:0:0:0:0:0:1'
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
+      host-header: X-Forwarded-Host
+      port-header: X-Forwarded-Port

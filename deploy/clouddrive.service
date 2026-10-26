@@ -1,0 +1,48 @@
+# systemd 服务单元（放到 /etc/systemd/system/clouddrive.service）
+#
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now clouddrive
+#   sudo systemctl status clouddrive
+#   sudo journalctl -u clouddrive -f
+
+[Unit]
+Description=CloudDrive backend (Spring Boot)
+# 数据库和 Redis 要先起来。注意 After 只保证启动顺序，
+# 不保证 MySQL 已经"可连接"，所以应用本身也要能扛住启动时的连接重试。
+After=network-online.target mysqld.service redis.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=clouddrive
+Group=clouddrive
+WorkingDirectory=/opt/clouddrive
+
+# 数据库口令等敏感配置放在单独文件里，权限 600，不进代码仓库
+EnvironmentFile=/opt/clouddrive/clouddrive.env
+
+# 4G 内存的机器上：堆给 1G，剩下的留给 MySQL、Redis 和系统。
+# 显式限制元空间，避免异常情况下无上限增长把机器吃满。
+ExecStart=/usr/bin/java \
+  -Xms512m -Xmx1g \
+  -XX:MaxMetaspaceSize=256m \
+  -XX:+UseG1GC \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/opt/clouddrive/logs \
+  -Dfile.encoding=UTF-8 \
+  -Duser.timezone=Asia/Shanghai \
+  -jar /opt/clouddrive/app.jar
+
+Restart=on-failure
+RestartSec=5
+# Spring Boot 收到 SIGTERM 正常退出时返回 143，不算失败
+SuccessExitStatus=143
+
+# 上传下载会同时开不少文件句柄，默认 1024 偏紧
+LimitNOFILE=65535
+
+StandardOutput=append:/opt/clouddrive/logs/app.log
+StandardError=append:/opt/clouddrive/logs/app.log
+
+[Install]
+WantedBy=multi-user.target

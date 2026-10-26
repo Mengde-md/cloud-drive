@@ -1,0 +1,29 @@
+# MySQL 调参（放到 /etc/my.cnf.d/clouddrive.cnf 或追加到 my.cnf 的 [mysqld] 段）
+#
+# 目标：在 4G 内存的机器上把 MySQL 控制在 700M 以内，
+# 给 JVM 留出 1G 堆、给 Redis 留 256M、给系统留 500M。
+
+[mysqld]
+# 默认 128M 偏小；这台机器上给到 512M 已经足够缓存本项目的全部索引和热数据。
+# 再往上加会和 JVM 抢内存，得不偿失。
+innodb_buffer_pool_size = 512M
+
+# 单实例小机器不需要上百个连接，限制住可以避免连接风暴打爆内存。
+# 应用侧 Hikari 池上限是 10，留足余量即可。
+max_connections = 100
+
+# 每张表单独一个表空间文件，便于单表回收空间
+innodb_file_per_table = 1
+
+# 崩溃后最多丢 1 秒事务，换取明显更好的写入性能。
+# 如果是真实生产的付费业务，应该保持默认的 1（每次提交都刷盘）。
+innodb_flush_log_at_trx_commit = 2
+
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+default-time-zone = '+08:00'
+
+# 慢查询日志：Day22 可观测性的一部分，配合应用侧的慢请求日志一起看
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 1

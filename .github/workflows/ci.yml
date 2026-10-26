@@ -1,14 +1,20 @@
-name: Java CI
+name: CloudDrive CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
+  backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clouddrive
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -17,5 +23,22 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Build and test
+          cache-dependency-path: clouddrive/pom.xml
+      - name: Verify backend with default isolated tests
         run: mvn -B verify
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clouddrive-ui
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: clouddrive-ui/package-lock.json
+      - run: npm ci
+      - run: npm run build

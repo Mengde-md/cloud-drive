@@ -1,18 +1,69 @@
-# Build output and IDE metadata
-**/target/
-**/*.log
-logs/
-pids/
+# ===== 构建产物 =====
+target/
+build-output/
+dist/
+node_modules/
+.vite/
+
+# ===== 本机私有配置（含真实口令，绝对不能入库）=====
+local.env.ps1
+.env
+*.local
+
+# ===== 运行/构建日志 =====
+*.log
+
+# ===== IDE 与系统 =====
 .idea/
 *.iml
-
-# Runtime secrets and local data
-deploy/.env
-.env
-data/
-files/
-chunks/
-
-# OS files
+.vs/
+.vscode/
 .DS_Store
 Thumbs.db
+
+# ===== 课程文档模板：含个人信息，按需决定是否提交 =====
+# 下面几份 docx 的封面要填组号、姓名、学号，推到公开仓库等于公开个人信息。
+# 如果仓库是私有的、或者你已经确认要公开，把这几行注释掉即可。
+1-组号-组员姓名-题目名称--需求分析.docx
+2-组号-组员姓名-题目名称--系统设计.docx
+3-组号-组员姓名-题目名称--专周报告.docx
+4-组号-组员姓名-题目名称--操作说明书.docx
+网络应用综合实践--任务指导书.docx
+
+# ===== 打包/渲染产物（可随时重新生成，不入库）=====
+# deploy-out / deploy-out-v2 是上传服务器用的打包目录，里面有 app.jar 和前端 dist
+deploy-out/
+deploy-out-v2/
+# 文档渲染出的预览图
+.review-renders/
+
+# ===== 沙箱遗留的临时文件 =====
+.__perm_test
+
+# ===== 私有配置、证书和运行数据 =====
+.env.*
+!.env.example
+*.env
+local.env.ps1.*
+!local.env.ps1.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+*service-account*.json
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+/data/
+/files/
+/chunks/
+/uploads/
+/backups/
+/clouddrive/data/
+/clouddrive/files/
+/clouddrive/chunks/

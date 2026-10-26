@@ -1,0 +1,58 @@
+# Day23：冻结可复现运行环境。
+#
+# 目标是"换一台机器也能用同一条命令把依赖跑起来"，
+# 并且所有账号口令都来自 .env（不进版本库），不依赖任何人本机上已经装好的 MySQL/Redis。
+#
+#   cp .env.example .env     # 按需修改口令
+#   docker compose up -d
+#   docker compose ps        # 等两个服务都变成 healthy
+#
+# 应用本身默认仍在宿主机用 mvn spring-boot:run 启动，通过 localhost 连这两个容器。
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: clouddrive-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # 表结构由 Flyway 迁移脚本负责，容器只提供一个空库
+      - --default-time-zone=+08:00
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # 必须有 healthcheck：否则应用会在 MySQL 还没初始化完时就去连，
+      # 表现为启动随机失败，而且每次报错都不一样。
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: clouddrive-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql-data:
+  redis-data:

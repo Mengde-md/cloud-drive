@@ -17,6 +17,7 @@ mvn -B -f clouddrive/pom.xml verify
 ```bash
 cd clouddrive-ui
 npm ci
+npm test
 npm run build
 ```
 

@@ -1,9 +1,9 @@
-/** 字节数转人类可读单位 */
+/** 字节数转人类可读单位；未知或无效的数值使用占位符。 */
 export function formatBytes(bytes) {
-  if (bytes === null || bytes === undefined) return '-'
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) return '-'
   if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const index = Math.floor(Math.log(bytes) / Math.log(1024))
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+  const index = Math.min(units.length - 1, Math.max(0, Math.floor(Math.log(bytes) / Math.log(1024))))
   const value = bytes / Math.pow(1024, index)
   return `${value.toFixed(index === 0 ? 0 : 1)} ${units[index]}`
 }

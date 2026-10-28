@@ -108,8 +108,10 @@ onMounted(() => {
 /** 粘贴内容一变就解析，用户不用点任何"解析"按钮 */
 function parseInput() {
   const parsed = shareApi.extractShare(rawInput.value)
-  if (parsed.token) token.value = parsed.token
-  if (parsed.passcode) passcode.value = parsed.passcode
+  // 每次按当前粘贴内容同步，避免改成无效内容后仍沿用上一条分享的凭证。
+  token.value = parsed.token
+  passcode.value = parsed.passcode
+  info.value = null
 }
 
 async function pasteFromClipboard() {

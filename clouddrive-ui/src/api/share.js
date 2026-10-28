@@ -1,4 +1,5 @@
 import request from './request'
+export { extractShare, extractToken } from '../shareParser.js'
 
 /* ---------- 所有者视角 ---------- */
 
@@ -54,71 +55,3 @@ export const autoFillLinkOf = (token, passcode) =>
 /** 供"复制链接和提取码"用的一段文本，格式固定，接收端能反解析出来 */
 export const shareTextOf = (token, passcode) =>
   `链接：${shareLinkOf(token)} 提取码：${passcode}`
-
-/**
- * 从用户粘贴的任意内容里解析出 token 和提取码。
- *
- * 这是"一键粘贴"的关键：用户可能粘进来的是
- *   - 完整的一段话：链接：http://host/s/abc123 提取码：1234
- *   - 免填链接：    http://host/s/abc123?p=1234
- *   - 只有链接：    http://host/s/abc123
- *   - 只有分享码：  abc123
- *   - 分享码和提取码分两行 / 用空格隔开
- * 与其要求用户"必须按某种格式粘贴"——那种要求在实际使用中一定会被违反——
- * 不如在这里把常见形态都认下来。
- *
- * @returns {{token: string, passcode: string}} 解析不出来的部分返回空串
- */
-export function extractShare(input) {
-  const text = String(input || '').trim()
-  if (!text) {
-    return { token: '', passcode: '' }
-  }
-
-  let token = ''
-  let passcode = ''
-
-  // 1) 先找链接里的 token：/s/xxxx
-  const fromUrl = text.match(/\/s\/([A-Za-z0-9_-]{8,})/)
-  if (fromUrl) {
-    token = fromUrl[1]
-  }
-
-  // 2) 免填链接里的提取码：?p=xxxx 或 &p=xxxx
-  const fromQuery = text.match(/[?&]p=([^&\s]+)/)
-  if (fromQuery) {
-    passcode = decodeURIComponent(fromQuery[1])
-  }
-
-  // 3) "提取码：1234" / "密码: 1234" / "pwd=1234" 这类写法
-  if (!passcode) {
-    const labeled = text.match(/(?:提取码|访问码|密码|pwd|code)\s*[:：=]?\s*([A-Za-z0-9]{4,32})/i)
-    if (labeled) {
-      passcode = labeled[1]
-    }
-  }
-
-  // 4) 没有链接时，把第一段长串当 token
-  if (!token) {
-    const bare = text.match(/[A-Za-z0-9_-]{8,}/)
-    if (bare) {
-      token = bare[0]
-    }
-  }
-
-  // 5) 仍然没有提取码：如果输入里除了 token 之外只剩一段短字符串，就认为它是提取码
-  if (!passcode && token) {
-    const rest = text.replace(token, ' ').replace(/https?:\/\/\S+/g, ' ')
-    const candidate = rest.match(/\b[A-Za-z0-9]{4,32}\b/)
-    if (candidate) {
-      passcode = candidate[0]
-    }
-  }
-
-  return { token, passcode }
-}
-
-/** 旧名保留，内部改调 extractShare，避免其它地方引用失效 */
-export function extractToken(input) {
-  return extractShare(input).token
-}

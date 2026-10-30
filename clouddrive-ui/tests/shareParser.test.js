@@ -39,6 +39,20 @@ test('decodes passcodes in query parameters', () => {
   }
 })
 
+test('reads passcodes only from the share URL query, excluding fragments', () => {
+  for (const base of [link, relativeLink]) {
+    assert.deepEqual(extractShare(`${base}?p=2468#preview`), { token, passcode: '2468' })
+    assert.deepEqual(extractShare(`${base}#preview?p=9999`), { token, passcode: '' })
+    assert.deepEqual(extractShare(`${base}#preview?p=9999 提取码：2468`), {
+      token, passcode: '2468'
+    })
+    assert.deepEqual(extractShare(`${base}?p=12%2334#preview`), { token, passcode: '12#34' })
+    assert.deepEqual(extractShare(`https://other.example/?p=9999 ${base}?p=2468`), {
+      token, passcode: '2468'
+    })
+  }
+})
+
 test('keeps the share token when a query passcode has malformed encoding', () => {
   for (const base of [link, relativeLink]) {
     for (const passcode of ['%', '%ZZ', '%E0%A4%A', '%broken']) {

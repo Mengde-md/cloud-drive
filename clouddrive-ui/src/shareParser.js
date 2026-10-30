@@ -9,10 +9,12 @@ export function extractShare(input) {
   let token = ''
   let passcode = ''
 
-  const fromUrl = text.match(/\/s\/([A-Za-z0-9_-]{8,})/)
+  const fromUrl = text.match(/\/s\/([A-Za-z0-9_-]{8,})\S*/)
   if (fromUrl) token = fromUrl[1]
 
-  const fromQuery = text.match(/[?&]p=([^&\s]+)/)
+  // 只读取当前分享链接的查询参数；锚点和其他链接不能提供提取码。
+  const query = fromUrl?.[0].match(/^[^?#]*\?([^#]*)/)
+  const fromQuery = query?.[1].match(/(?:^|&)p=([^&\s]+)/)
   if (fromQuery) {
     try {
       passcode = decodeURIComponent(fromQuery[1])

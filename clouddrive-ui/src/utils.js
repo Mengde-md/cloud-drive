@@ -47,8 +47,9 @@ export async function copyText(text) {
     // 落到下面的兜底方案
   }
 
+  let textarea
   try {
-    const textarea = document.createElement('textarea')
+    textarea = document.createElement('textarea')
     textarea.value = text
     // 放到视口外而不是 display:none —— 隐藏元素无法被选中，复制会静默失败
     textarea.style.position = 'fixed'
@@ -56,10 +57,11 @@ export async function copyText(text) {
     textarea.setAttribute('readonly', '')
     document.body.appendChild(textarea)
     textarea.select()
-    const ok = document.execCommand('copy')
-    document.body.removeChild(textarea)
-    return ok
+    return document.execCommand('copy')
   } catch (error) {
     return false
+  } finally {
+    // 选择或复制抛错时也清理临时节点，避免残留用户复制的内容。
+    textarea?.remove()
   }
 }

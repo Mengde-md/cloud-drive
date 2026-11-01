@@ -17,14 +17,18 @@ export function formatTime(text) {
 /** 用 blob 触发浏览器下载（下载接口需要带令牌，不能用普通链接） */
 export function saveBlob(blob, filename) {
   const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  // 必须释放，否则这个 blob 会一直占着内存直到页面关闭
-  window.URL.revokeObjectURL(url)
+  let link
+  try {
+    link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+  } finally {
+    link?.remove()
+    // 下载准备或触发失败时也释放 URL，避免 Blob 一直占用内存。
+    window.URL.revokeObjectURL(url)
+  }
 }
 
 /**

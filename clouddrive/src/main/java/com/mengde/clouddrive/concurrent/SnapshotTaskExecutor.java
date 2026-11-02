@@ -27,8 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *       避免同一份数据被并发写两次造成互相覆盖。</li>
  *   <li><b>提交时冻结入参</b>：List.copyOf 立刻拍快照，
  *       否则调用方在任务执行前继续往原列表里加元素，worker 看到的就不是它被提交时的数据。</li>
- *   <li><b>finally 里清 key</b>：任务失败也要把 key 移除，否则这个 key 永远"在飞"，
- *       后续重试会被误判为重复提交而永远拿到那个已失败的 future。</li>
+ *   <li><b>完成通知前清 key</b>：任务结束后先在 finally 里移除 key，再完成 future，
+ *       保证完成回调或 get 返回后的立即重试不会拿到旧 future。</li>
  * </ol>
  */
 public final class SnapshotTaskExecutor implements AutoCloseable {
@@ -121,16 +121,24 @@ public final class SnapshotTaskExecutor implements AutoCloseable {
                          List<? extends DriveEntry> entries,
                          CompletableFuture<SnapshotTaskReceipt> result) {
         long startedAt = System.nanoTime();
+        SnapshotTaskReceipt receipt = null;
+        Throwable taskFailure = null;
         try {
             consumer.accept(entries);
-            result.complete(new SnapshotTaskReceipt(
+            receipt = new SnapshotTaskReceipt(
                     taskKey,
                     entries.size(),
-                    Duration.ofNanos(System.nanoTime() - startedAt)));
+                    Duration.ofNanos(System.nanoTime() - startedAt));
         } catch (Throwable failure) {
-            result.completeExceptionally(failure);
+            taskFailure = failure;
         } finally {
             inFlight.remove(taskKey, result);
+        }
+        // complete may run callbacks inline; publish the result only after cleanup.
+        if (taskFailure == null) {
+            result.complete(receipt);
+        } else {
+            result.completeExceptionally(taskFailure);
         }
     }
 

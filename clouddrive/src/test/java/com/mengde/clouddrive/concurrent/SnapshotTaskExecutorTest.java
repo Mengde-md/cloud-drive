@@ -6,6 +6,8 @@ import com.mengde.clouddrive.domain.DriveEntry;
 import com.mengde.clouddrive.snapshot.EntrySnapshotStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -112,6 +114,37 @@ class SnapshotTaskExecutorTest {
                     () -> assertEquals(1, observed.get().size()),
                     () -> assertThrows(UnsupportedOperationException.class,
                             () -> observed.get().clear()));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void completionCallbackCanImmediatelyRetryTheSameKey(boolean failFirst) throws Exception {
+        CountDownLatch firstStarted = new CountDownLatch(1);
+        CountDownLatch releaseFirst = new CountDownLatch(1);
+        AtomicInteger attempts = new AtomicInteger();
+
+        try (SnapshotTaskExecutor executor = new SnapshotTaskExecutor(1, 1, entries -> {
+            if (attempts.incrementAndGet() == 1) {
+                firstStarted.countDown();
+                await(releaseFirst);
+                if (failFirst) {
+                    throw new IOException("simulated disk failure");
+                }
+            }
+        })) {
+            CompletableFuture<SnapshotTaskReceipt> first = executor.submit("same-key", entries());
+            assertTrue(firstStarted.await(2, TimeUnit.SECONDS));
+            // Register before releasing the worker so this callback observes completion itself.
+            CompletableFuture<SnapshotTaskReceipt> retried = first.handle((receipt, failure) -> {
+                assertEquals(failFirst, failure != null);
+                assertEquals(0, executor.inFlightTaskCount());
+                return executor.submit("same-key", entries());
+            }).thenCompose(future -> future);
+            releaseFirst.countDown();
+
+            assertEquals("same-key", retried.get(2, TimeUnit.SECONDS).taskKey());
+            assertEquals(2, attempts.get());
         }
     }
 

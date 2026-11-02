@@ -32,7 +32,8 @@ export function extractShare(input) {
   }
 
   if (!token) {
-    const bare = text.match(/[A-Za-z0-9_-]{8,}/)
+    // 独立分享码只从链接外读取，避免把普通网址的域名或路径当成分享码。
+    const bare = withoutLinks.match(/[A-Za-z0-9_-]{8,}/)
     if (bare) token = bare[0]
   }
 

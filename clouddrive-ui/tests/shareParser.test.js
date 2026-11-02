@@ -76,3 +76,21 @@ test('does not guess a passcode from unrelated URL parameters', () => {
     assert.deepEqual(extractShare(`${base}?tracking=campaign2026 2468`), { token, passcode: '2468' })
   }
 })
+
+test('does not treat unrelated URLs as bare share tokens', () => {
+  for (const input of [
+    'https://unrelated.example/downloads/archive.zip?p=2468',
+    `https://drive.example/preview/${token}`,
+    `https://${token}.example/?token=${token}`,
+    `https://other.example/#${token}`
+  ]) {
+    assert.deepEqual(extractShare(input), { token: '', passcode: '' }, input)
+    assert.equal(extractToken(input), '', input)
+  }
+})
+
+test('finds a bare share token outside an unrelated URL', () => {
+  assert.deepEqual(extractShare(`https://unrelated.example/downloads ${token} 2468`), {
+    token, passcode: '2468'
+  })
+})

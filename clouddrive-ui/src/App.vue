@@ -1,5 +1,8 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component, route }">
+    <!-- 切换分享链接时重新验证提取码，并清除上一个链接的文件信息。 -->
+    <component :is="Component" :key="route.name === 'share-access' ? route.fullPath : undefined" />
+  </router-view>
 </template>
 
 <script setup>

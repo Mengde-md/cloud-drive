@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Document, DocumentCopy, Download, FolderAdd, Link, Search } from '@element-plus/icons-vue'
@@ -96,6 +96,14 @@ const info = ref(null)
 const loading = ref(false)
 const downloading = ref(false)
 const saving = ref(false)
+let lookupVersion = 0
+
+watch([rawInput, token, passcode], () => {
+  // 输入变化后，旧查询即使返回也不能恢复已清除的文件信息。
+  lookupVersion += 1
+  info.value = null
+  loading.value = false
+}, { flush: 'sync' })
 
 onMounted(() => {
   // 从别处带参数跳过来时直接填上
@@ -111,7 +119,6 @@ function parseInput() {
   // 每次按当前粘贴内容同步，避免改成无效内容后仍沿用上一条分享的凭证。
   token.value = parsed.token
   passcode.value = parsed.passcode
-  info.value = null
 }
 
 async function pasteFromClipboard() {
@@ -138,32 +145,38 @@ function clearAll() {
   rawInput.value = ''
   token.value = ''
   passcode.value = ''
-  info.value = null
 }
 
 async function lookup() {
-  if (!token.value.trim()) {
+  const shareToken = token.value.trim()
+  const sharePasscode = passcode.value.trim()
+  if (!shareToken) {
     ElMessage.warning('没能识别出分享码，请检查粘贴的内容是否完整')
     return
   }
-  if (!passcode.value.trim()) {
+  if (!sharePasscode) {
     ElMessage.warning('请输入提取码')
     return
   }
 
+  const version = ++lookupVersion
   loading.value = true
   info.value = null
   try {
-    info.value = await shareApi.getShareInfo(token.value.trim(), passcode.value.trim())
+    const result = await shareApi.getShareInfo(shareToken, sharePasscode)
+    if (version === lookupVersion) info.value = result
   } catch (error) {
     // 404 统一表示"分享不存在 / 已过期 / 提取码错误"，拦截器已弹提示。
     // 后端刻意不区分原因，避免别人靠响应差异枚举有效链接。
   } finally {
-    loading.value = false
+    if (version === lookupVersion) loading.value = false
   }
 }
 
 async function download() {
+  const file = info.value
+  if (!file) return
+
   downloading.value = true
   try {
     const response = await fetch(
@@ -172,7 +185,7 @@ async function download() {
       ElMessage.error('分享已失效，请重新确认链接和提取码')
       return
     }
-    saveBlob(await response.blob(), info.value.displayName)
+    saveBlob(await response.blob(), file.displayName)
     ElMessage.success('开始下载')
   } catch (error) {
     ElMessage.error('无法连接服务器')
@@ -182,6 +195,8 @@ async function download() {
 }
 
 async function save() {
+  if (!info.value) return
+
   saving.value = true
   try {
     const saved = await shareApi.saveShare(

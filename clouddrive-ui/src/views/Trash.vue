@@ -115,7 +115,13 @@ const noteText = '回收站中的文件仍占用存储空间，清空后释放�
 async function load() {
   loading.value = true
   try {
-    const data = await fileApi.listTrash(page.value, size.value)
+    let data = await fileApi.listTrash(page.value, size.value)
+    const lastPage = Math.max(0, Math.ceil(data.total / size.value) - 1)
+    if (page.value > lastPage) {
+      // 恢复末页最后一项后回到有效页，避免有剩余条目却显示空回收站。
+      page.value = lastPage
+      data = await fileApi.listTrash(page.value, size.value)
+    }
     items.value = data.items
     total.value = data.total
   } catch (error) {

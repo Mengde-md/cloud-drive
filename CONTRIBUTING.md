@@ -21,7 +21,7 @@ npm test
 npm run build
 ```
 
-GitHub Actions 分别检查后端测试与打包、前端单元测试与构建。修改页面交互后，还应在浏览器中检查相关流程。
+GitHub Actions 分别检查后端测试与打包、前端单元测试与构建。也可在 Actions → CloudDrive CI 中选择 Run workflow 手动执行，每个任务最多运行 15 分钟。修改页面交互后，还应在浏览器中检查相关流程。
 
 ### 分享流程回归
 

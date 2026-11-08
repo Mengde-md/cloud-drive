@@ -212,15 +212,15 @@ function openReset(row) {
 }
 
 async function submitReset() {
-  if (newPasscode.value.trim().length < 4) {
+  const code = newPasscode.value.trim()
+  if (code.length < 4) {
     ElMessage.warning('提取码至少 4 位')
     return
   }
+  const token = resetTarget.value.token
   submitting.value = true
   try {
-    await shareApi.resetPasscode(resetTarget.value.token, newPasscode.value.trim())
-    const code = newPasscode.value.trim()
-    const token = resetTarget.value.token
+    await shareApi.resetPasscode(token, code)
     resetDialog.value = false
     // 这是唯一还知道新提取码的时刻，直接给出可一键复制的完整内容，
     // 否则又会回到"忘了没处查"的老问题

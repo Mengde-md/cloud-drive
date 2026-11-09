@@ -106,6 +106,7 @@ const items = ref([])
 const total = ref(0)
 const page = ref(0)
 const size = ref(20)
+let loadSequence = 0
 
 // 列表里只会出现"当初点删除的那一个"，子条目不铺开——这一点要跟用户说清楚，
 // 否则删了一个有几十个文件的目录，看到回收站只有一行会以为丢了东西。
@@ -113,21 +114,26 @@ const noteText = '回收站中的文件仍占用存储空间，清空后释放�
   + '删除文件夹时里面的内容会一起进回收站，列表只显示被删的文件夹本身，恢复时整体恢复。'
 
 async function load() {
+  const sequence = ++loadSequence
+  const requestedPage = page.value
+  const pageSize = size.value
   loading.value = true
   try {
-    let data = await fileApi.listTrash(page.value, size.value)
-    const lastPage = Math.max(0, Math.ceil(data.total / size.value) - 1)
-    if (page.value > lastPage) {
+    let data = await fileApi.listTrash(requestedPage, pageSize)
+    if (sequence !== loadSequence) return
+    const lastPage = Math.max(0, Math.ceil(data.total / pageSize) - 1)
+    if (requestedPage > lastPage) {
       // 恢复末页最后一项后回到有效页，避免有剩余条目却显示空回收站。
+      data = await fileApi.listTrash(lastPage, pageSize)
+      if (sequence !== loadSequence) return
       page.value = lastPage
-      data = await fileApi.listTrash(page.value, size.value)
     }
     items.value = data.items
     total.value = data.total
   } catch (error) {
     // 已提示
   } finally {
-    loading.value = false
+    if (sequence === loadSequence) loading.value = false
   }
 }
 

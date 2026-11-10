@@ -489,7 +489,9 @@ function openShare(row) {
 }
 
 async function submitShare() {
-  if (sharePasscode.value.trim().length < 4) {
+  if (submitting.value || !shareTarget.value) return
+  const code = sharePasscode.value.trim()
+  if (code.length < 4) {
     ElMessage.warning('提取码至少 4 位')
     return
   }
@@ -497,10 +499,9 @@ async function submitShare() {
   try {
     const data = await shareApi.createShare(
       shareTarget.value.id,
-      sharePasscode.value.trim(),
+      code,
       shareExpiresAt.value
     )
-    const code = sharePasscode.value.trim()
     shareLink.value = shareApi.shareLinkOf(data.token)
     shareAutoLink.value = shareApi.autoFillLinkOf(data.token, code)
     shareText.value = shareApi.shareTextOf(data.token, code)

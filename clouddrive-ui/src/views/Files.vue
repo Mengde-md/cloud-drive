@@ -135,8 +135,10 @@
     </el-dialog>
 
     <!-- 创建分享 -->
-    <el-dialog v-model="shareDialog" title="创建分享" :width="dialogWidth('460px')">
-      <el-form :label-width="isMobile ? '70px' : '90px'">
+    <el-dialog v-model="shareDialog" title="创建分享" :width="dialogWidth('460px')"
+               :show-close="!shareSubmitting" :close-on-click-modal="!shareSubmitting"
+               :close-on-press-escape="!shareSubmitting">
+      <el-form :label-width="isMobile ? '70px' : '90px'" :disabled="shareSubmitting">
         <el-form-item label="文件">
           <span class="share-filename">{{ shareTarget?.displayName }}</span>
         </el-form-item>
@@ -152,8 +154,8 @@
         请将链接与提取码发送给需要查看文件的人，可随时在「我的分享」中取消分享。
       </p>
       <template #footer>
-        <el-button @click="shareDialog = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitShare">生成链接</el-button>
+        <el-button :disabled="shareSubmitting" @click="shareDialog = false">取消</el-button>
+        <el-button type="primary" :loading="shareSubmitting" @click="submitShare">生成链接</el-button>
       </template>
     </el-dialog>
 
@@ -253,6 +255,7 @@ const renameValue = ref('')
 const renameTarget = ref(null)
 
 const shareDialog = ref(false)
+const shareSubmitting = ref(false)
 const shareTarget = ref(null)
 const sharePasscode = ref('')
 const shareExpiresAt = ref('')
@@ -482,6 +485,7 @@ async function remove(row) {
 /* ---------- 分享 ---------- */
 
 function openShare(row) {
+  if (shareSubmitting.value) return
   shareTarget.value = row
   sharePasscode.value = String(Math.floor(1000 + Math.random() * 9000))
   shareExpiresAt.value = ''
@@ -489,13 +493,13 @@ function openShare(row) {
 }
 
 async function submitShare() {
-  if (submitting.value || !shareTarget.value) return
+  if (shareSubmitting.value || !shareTarget.value) return
   const code = sharePasscode.value.trim()
   if (code.length < 4) {
     ElMessage.warning('提取码至少 4 位')
     return
   }
-  submitting.value = true
+  shareSubmitting.value = true
   try {
     const data = await shareApi.createShare(
       shareTarget.value.id,
@@ -512,7 +516,7 @@ async function submitShare() {
   } catch (error) {
     // 已提示
   } finally {
-    submitting.value = false
+    shareSubmitting.value = false
   }
 }
 

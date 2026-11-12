@@ -30,6 +30,13 @@ test('rounds fractional bytes without choosing an invalid unit', () => {
   assert.equal(formatBytes(1.5), '2 B')
 })
 
+test('uses the next unit when rounding reaches 1024', () => {
+  assert.equal(formatBytes(1023.49), '1023 B')
+  assert.equal(formatBytes(1023.5), '1.0 KB')
+  assert.equal(formatBytes(1024 ** 2 - 100), '1023.9 KB')
+  assert.equal(formatBytes(1024 ** 2 - 1), '1.0 MB')
+})
+
 test('keeps the largest unit defined for unusually large finite values', () => {
   const formatted = formatBytes(Number.MAX_VALUE)
   assert.match(formatted, / EB$/)

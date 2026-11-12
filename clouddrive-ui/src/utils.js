@@ -5,7 +5,11 @@ export function formatBytes(bytes) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
   const index = Math.min(units.length - 1, Math.max(0, Math.floor(Math.log(bytes) / Math.log(1024))))
   const value = bytes / Math.pow(1024, index)
-  return `${value.toFixed(index === 0 ? 0 : 1)} ${units[index]}`
+  const formatted = value.toFixed(index === 0 ? 0 : 1)
+  if (index < units.length - 1 && Number(formatted) >= 1024) {
+    return `${(value / 1024).toFixed(1)} ${units[index + 1]}`
+  }
+  return `${formatted} ${units[index]}`
 }
 
 /** 把后端返回的 LocalDateTime 字符串收拾成易读格式 */

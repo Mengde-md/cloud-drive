@@ -130,9 +130,13 @@ async function load() {
     entries.value = documents
     capabilities.value = state
     metadata.value = results
-    schedulePoll()
   } catch (error) { /* 由请求层展示错误，保留已读取结果。 */ }
-  finally { if (current === sequence) loading.value = false }
+  finally {
+    if (current === sequence) {
+      loading.value = false
+      schedulePoll()
+    }
+  }
 }
 function schedulePoll() {
   window.clearTimeout(pollTimer)

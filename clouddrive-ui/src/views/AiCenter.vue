@@ -123,6 +123,7 @@ async function load() {
   window.clearTimeout(pollTimer)
   try {
     const [allEntries, state] = await Promise.all([fileApi.listEntries(), analysisApi.getCapabilities()])
+    if (disposed || current !== sequence) return
     const documents = allEntries.filter(row => row.kind === 'DOCUMENT')
     const results = await fetchMetadata(documents.map(row => row.id))
     if (disposed || current !== sequence) return

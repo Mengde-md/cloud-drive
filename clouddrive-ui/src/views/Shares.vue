@@ -205,6 +205,7 @@ async function copyValue(value, okMessage) {
 }
 
 function openReset(row) {
+  if (submitting.value) return
   resetTarget.value = row
   // 给个随机初值，省得用户自己想；想改也可以直接改
   newPasscode.value = String(Math.floor(1000 + Math.random() * 9000))
@@ -212,6 +213,7 @@ function openReset(row) {
 }
 
 async function submitReset() {
+  if (submitting.value || !resetTarget.value) return
   const code = newPasscode.value.trim()
   if (code.length < 4) {
     ElMessage.warning('提取码至少 4 位')

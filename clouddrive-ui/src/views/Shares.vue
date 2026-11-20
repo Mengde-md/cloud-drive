@@ -155,6 +155,7 @@ const { isMobile, dialogWidth } = useBreakpoint()
 const loading = ref(false)
 const submitting = ref(false)
 const shares = ref([])
+let loadSequence = 0
 
 const resetDialog = ref(false)
 const resetTarget = ref(null)
@@ -176,13 +177,15 @@ function onAction(command, row) {
 }
 
 async function load() {
+  const sequence = ++loadSequence
   loading.value = true
   try {
-    shares.value = await shareApi.listShares()
+    const rows = await shareApi.listShares()
+    if (sequence === loadSequence) shares.value = rows
   } catch (error) {
     // 已提示
   } finally {
-    loading.value = false
+    if (sequence === loadSequence) loading.value = false
   }
 }
 

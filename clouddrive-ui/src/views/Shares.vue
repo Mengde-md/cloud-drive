@@ -122,8 +122,10 @@
     </el-dialog>
 
     <!-- 重置提取码 -->
-    <el-dialog v-model="resetDialog" title="重置提取码" :width="dialogWidth('420px')">
-      <el-form :label-width="isMobile ? '70px' : '90px'">
+    <el-dialog v-model="resetDialog" title="重置提取码" :width="dialogWidth('420px')"
+               :show-close="!submitting" :close-on-click-modal="!submitting"
+               :close-on-press-escape="!submitting">
+      <el-form :label-width="isMobile ? '70px' : '90px'" :disabled="submitting">
         <el-form-item label="文件">
           <span class="share-file-name">{{ resetTarget?.displayName || '（文件已删除）' }}</span>
         </el-form-item>
@@ -135,7 +137,7 @@
         分享链接保持不变，旧提取码在保存后立即失效。
       </p>
       <template #footer>
-        <el-button @click="resetDialog = false">取消</el-button>
+        <el-button :disabled="submitting" @click="resetDialog = false">取消</el-button>
         <el-button type="primary" :loading="submitting" @click="submitReset">保存</el-button>
       </template>
     </el-dialog>

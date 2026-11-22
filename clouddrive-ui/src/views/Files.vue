@@ -107,7 +107,7 @@
 
     <!-- 上传进度 -->
     <el-dialog v-model="uploadDialog" title="正在上传" :width="dialogWidth('420px')"
-               :close-on-click-modal="false" :show-close="false">
+               :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
       <p class="cd-muted upload-name">{{ uploadingName }}</p>
       <el-progress :percentage="uploadPercent" :stroke-width="14" striped striped-flow />
       <p class="cd-muted upload-hint">

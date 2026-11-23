@@ -75,13 +75,14 @@ const savingReview = ref(false)
 let loadSequence = 0
 
 async function loadSettings() {
+  if (settingsLoading.value || savingSettings.value) return
   settingsLoading.value = true
   try { reviewEnabled.value = (await analysisApi.getAnalysisSettings()).reviewEnabled; settingsReady.value = true }
   catch (error) { /* 请求层显示错误。 */ }
   finally { settingsLoading.value = false }
 }
 async function saveSettings(enabled) {
-  if (savingSettings.value) return
+  if (!settingsReady.value || settingsLoading.value || savingSettings.value) return
   savingSettings.value = true
   try {
     reviewEnabled.value = (await analysisApi.setAnalysisSettings(enabled)).reviewEnabled

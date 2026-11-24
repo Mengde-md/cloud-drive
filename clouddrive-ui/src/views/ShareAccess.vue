@@ -10,6 +10,7 @@
       <template v-if="!info">
         <el-input
           v-model="passcode"
+          :disabled="loading"
           placeholder="请输入提取码"
           size="large"
           maxlength="32"
@@ -96,6 +97,7 @@ onMounted(() => {
 const loggedIn = computed(() => Boolean(localStorage.getItem('cd_token')))
 
 async function lookup() {
+  if (loading.value) return
   if (!passcode.value.trim()) {
     ElMessage.warning('请输入提取码')
     return

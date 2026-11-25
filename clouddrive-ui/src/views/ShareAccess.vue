@@ -117,8 +117,7 @@ async function lookup() {
 async function download() {
   downloading.value = true
   try {
-    // 下载走原生 fetch 而不是 axios：这个接口返回的是文件流，
-    // 用 fetch 能直接拿 blob，也能读到 Content-Disposition 里的文件名。
+    // 下载成功后沿用验证分享时取得的文件名。
     const response = await fetch(shareApi.sharedDownloadUrl(token.value, passcode.value.trim()))
     if (!response.ok) {
       ElMessage.error('分享已失效，请重新确认链接和提取码')

@@ -74,10 +74,10 @@ npm run build     # 产出 dist/
 
 ## 几个实现上的取舍
 
-**下载为什么走 blob 而不是直接 `<a href>`**
-下载接口要求 `Authorization` 头，而浏览器发起的普通导航请求带不上自定义头。
-所以用 axios 取回 blob 再用 ObjectURL 触发保存。
-分享下载是匿名接口（提取码本身就是凭证），可以用普通链接。
+**文件下载与分享下载**
+我的文件页面通过 axios 携带 `Authorization` 请求文件，使用列表中的 `displayName` 作为下载文件名。
+分享页面通过 `fetch` 携带分享令牌和提取码请求文件，先检查 HTTP 状态，再读取 Blob。下载文件名取自验证分享时返回的 `displayName`。
+两种下载都调用 `saveBlob` 保存文件，并在触发下载后释放临时对象 URL。
 
 **目录树在前端拼**
 后端 `GET /api/entries` 返回当前用户的扁平列表，

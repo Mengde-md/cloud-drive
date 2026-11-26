@@ -31,7 +31,7 @@ npm run build     # 产出 dist/
 | 页面 | 路由 | 用到的接口 |
 |---|---|---|
 | 登录 / 注册 / 找回密码 | `/login` | `/api/auth/register`、`/login`、`/email-code`、`/reset-password` |
-| 账号管理（管理员） | `/admin/users` | `GET /api/admin/users`、`PATCH .../{id}/password`、`/status`、`/role` |
+| 账号管理（管理员） | `/admin/users` | `GET /api/admin/users`、`PATCH .../{id}/password`、`/status`、`/role`、`/quota` |
 | 辅助审核（管理员） | `/admin/reviews` | `/api/admin/reviews`、`/api/admin/analysis-settings` |
 | AI 智能分类 | `/ai` | `/api/analysis/capabilities`、`/api/analysis`、`POST /api/analysis/{id}/reanalyze` |
 | 我的文件 | `/files` | `GET/POST /api/entries`、`PUT /api/entries/{id}/name`、`DELETE /api/entries/{id}`、`POST /api/files/upload`、`GET /api/files/{id}/download` |
@@ -41,6 +41,8 @@ npm run build     # 产出 dist/
 | 分享访问 | `/s/:token` | `GET /api/shares/{token}/info`、`/download`（匿名）、`POST .../save`（登录后可转存） |
 
 文件列表支持自动分类、跨目录类别筛选、分析来源/状态和重新分析，元数据接口为 `/api/analysis`。辅助审核默认关闭，可由管理员保存开关和人工复核意见。注册要求真实邮箱验证码；配置方法见 [新增功能配置说明](../deploy/新增功能配置说明.md)。可见页面只展示功能说明，技术实现介绍保留在开发文档中。
+
+管理员扩容时填写账号新的总容量，单位为 GiB，上限为 100 GiB。比如从 10 GiB 扩至 15 GiB，页面填写 `15`，前端向 `PATCH /api/admin/users/{id}/quota` 发送 `{"quotaBytes":16106127360}`。接口收到相同总容量时返回当前配额。若提交的总容量大于零但低于当前配额，接口返回 HTTP 409。
 
 ## 分享的两个方向
 
